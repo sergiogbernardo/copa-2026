@@ -109,11 +109,7 @@ describe('Worker routes', () => {
     const { env, ctx } = setup();
     env.ALLOWED_ORIGIN = '' as unknown as string;
 
-    const response = await worker.fetch(
-      new Request('https://worker.example/matches'),
-      env,
-      ctx,
-    );
+    const response = await worker.fetch(new Request('https://worker.example/matches'), env, ctx);
 
     expect(response.status).toBe(500);
     expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
