@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMatches } from '../../lib/hooks';
 import { isLiveMatch } from '../../lib/matchStatus';
 import { includesQuery, useSearchQuery } from '../../lib/search';
+import { TBD_NAME, useI18n } from '../../lib/i18n';
 import { useFavoriteTeam } from '../../components/FavoriteTeam';
 import { CardGridSkeleton } from '../../components/Skeletons';
 import { StarIcon } from '../../components/icons';
@@ -11,16 +12,16 @@ import MatchCard from './MatchCard';
 
 type Filter = 'all' | 'live' | 'today' | 'upcoming' | 'finished';
 
-const FILTERS: { key: Filter; label: string }[] = [
-  { key: 'all', label: 'Todos' },
-  { key: 'live', label: 'Ao vivo' },
-  { key: 'today', label: 'Hoje' },
-  { key: 'upcoming', label: 'Próximos' },
-  { key: 'finished', label: 'Encerrados' },
+const FILTERS: { key: Filter; labelKey: string }[] = [
+  { key: 'all', labelKey: 'filter.all' },
+  { key: 'live', labelKey: 'filter.live' },
+  { key: 'today', labelKey: 'filter.today' },
+  { key: 'upcoming', labelKey: 'filter.upcoming' },
+  { key: 'finished', labelKey: 'filter.finished' },
 ];
 
 /** A fixture with neither team decided yet (e.g. an empty knockout slot). */
-const bothUndecided = (m: Match) => m.home.name === 'A definir' && m.away.name === 'A definir';
+const bothUndecided = (m: Match) => m.home.name === TBD_NAME && m.away.name === TBD_NAME;
 
 const isToday = (m: Match) => {
   const now = new Date();
@@ -54,13 +55,13 @@ interface DayGroup {
 }
 
 /** Group matches by local calendar day, preserving the kickoff order. */
-function groupByDay(matches: Match[]): DayGroup[] {
+function groupByDay(matches: Match[], locale: string): DayGroup[] {
   const groups = new Map<string, DayGroup>();
 
   for (const match of matches) {
     const date = new Date(match.kickoff);
     const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-    const label = date.toLocaleDateString('pt-BR', {
+    const label = date.toLocaleDateString(locale, {
       weekday: 'long',
       day: '2-digit',
       month: 'long',
@@ -79,13 +80,14 @@ export default function MatchesPage() {
   const { data: matches, isLoading, isError } = useMatches();
   const { favoriteTeam, setFavoriteTeam } = useFavoriteTeam();
   const q = useSearchQuery();
+  const { t, locale } = useI18n();
 
   const availableMatches = (matches ?? []).filter((match) => !bothUndecided(match));
   const teams = [
     ...new Set(
       availableMatches
         .flatMap((match) => [match.home.name, match.away.name])
-        .filter((team) => team !== 'A definir'),
+        .filter((team) => team !== TBD_NAME),
     ),
   ].sort((a, b) => a.localeCompare(b));
 
@@ -102,7 +104,7 @@ export default function MatchesPage() {
   // "Ao vivo" stay chronological (nearest kickoff first).
   const newestFirst = filter === 'all' || filter === 'finished';
   const ordered = newestFirst ? [...filtered].reverse() : filtered;
-  const days = groupByDay(ordered);
+  const days = groupByDay(ordered, locale);
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-4">
@@ -110,7 +112,7 @@ export default function MatchesPage() {
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-wrap gap-2">
-          {FILTERS.map(({ key, label }) => (
+          {FILTERS.map(({ key, labelKey }) => (
             <button
               key={key}
               onClick={() => setFilter(key)}
@@ -118,7 +120,7 @@ export default function MatchesPage() {
                 filter === key ? 'bg-pitch text-white' : 'bg-slate-200 hover:bg-slate-300'
               }`}
             >
-              {label}
+              {t(labelKey)}
             </button>
           ))}
         </div>
@@ -126,7 +128,7 @@ export default function MatchesPage() {
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-sm text-slate-500">
             <StarIcon filled={Boolean(favoriteTeam)} className="h-4 w-4 text-amber-400" />
-            <span className="sr-only">Seleção favorita</span>
+            <span className="sr-only">{t('favorite.srLabel')}</span>
             <select
               value={favoriteTeam}
               onChange={(event) => {
@@ -135,7 +137,7 @@ export default function MatchesPage() {
               }}
               className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-700"
             >
-              <option value="">Escolher favorita</option>
+              <option value="">{t('favorite.choose')}</option>
               {teams.map((team) => (
                 <option key={team} value={team}>
                   {team}
@@ -152,17 +154,15 @@ export default function MatchesPage() {
                 favoriteOnly ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-800'
               }`}
             >
-              Só {favoriteTeam}
+              {t('favorite.only', { team: favoriteTeam })}
             </button>
           )}
         </div>
       </div>
 
       {isLoading && <CardGridSkeleton />}
-      {isError && <p className="text-red-600">Não foi possível carregar os jogos.</p>}
-      {matches && filtered.length === 0 && (
-        <p className="text-slate-500">Nenhum jogo nesta seleção.</p>
-      )}
+      {isError && <p className="text-red-600">{t('matches.error')}</p>}
+      {matches && filtered.length === 0 && <p className="text-slate-500">{t('matches.empty')}</p>}
 
       <div className="space-y-6">
         {days.map((day) => (

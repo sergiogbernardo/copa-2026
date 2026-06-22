@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TeamCrest } from '../../components/TeamCrest';
 import { isLiveMatch } from '../../lib/matchStatus';
+import { teamName, useI18n } from '../../lib/i18n';
 import type { Match } from '../../types';
 
 function countdown(kickoff: string, now: number): string {
@@ -25,6 +26,7 @@ export function pickFeaturedMatch(matches: Match[], now = Date.now()): Match | n
 
 export default function FeaturedMatch({ matches }: { matches: Match[] }) {
   const [now, setNow] = useState(Date.now());
+  const { t, lang } = useI18n();
   const match = pickFeaturedMatch(matches, now);
 
   useEffect(() => {
@@ -39,16 +41,16 @@ export default function FeaturedMatch({ matches }: { matches: Match[] }) {
     <section className="overflow-hidden rounded-xl bg-gradient-to-r from-pitch to-emerald-700 p-4 text-white shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="text-xs font-bold uppercase tracking-wider text-white/80">
-          {live ? 'Agora ao vivo' : 'Próximo jogo'}
+          {live ? t('featured.live') : t('featured.next')}
         </span>
         <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-          {live ? 'AO VIVO' : `Começa em ${countdown(match.kickoff, now)}`}
+          {live ? t('live.upper') : t('featured.startsIn', { time: countdown(match.kickoff, now) })}
         </span>
       </div>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
         <div className="flex min-w-0 flex-col items-center gap-2">
           <TeamCrest name={match.home.name} crest={match.home.logo} className="h-10 w-10" />
-          <span className="truncate font-semibold">{match.home.name}</span>
+          <span className="truncate font-semibold">{teamName(match.home.name, lang)}</span>
         </div>
         <div className="text-xl font-bold tabular-nums">
           {match.home.goals !== null && match.away.goals !== null
@@ -57,7 +59,7 @@ export default function FeaturedMatch({ matches }: { matches: Match[] }) {
         </div>
         <div className="flex min-w-0 flex-col items-center gap-2">
           <TeamCrest name={match.away.name} crest={match.away.logo} className="h-10 w-10" />
-          <span className="truncate font-semibold">{match.away.name}</span>
+          <span className="truncate font-semibold">{teamName(match.away.name, lang)}</span>
         </div>
       </div>
     </section>

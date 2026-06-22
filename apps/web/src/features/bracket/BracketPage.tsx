@@ -3,6 +3,7 @@ import type { BracketRound, Match } from '../../types';
 import { TrophyIcon } from '../../components/icons';
 import { TeamCrest } from '../../components/TeamCrest';
 import { CardGridSkeleton } from '../../components/Skeletons';
+import { stageLabel, TBD_NAME, teamName, useI18n } from '../../lib/i18n';
 
 const LINE = 'pointer-events-none absolute bg-slate-300';
 
@@ -24,11 +25,14 @@ function MatchTile({ match, className = 'w-40' }: { match: Match; className?: st
 }
 
 function TeamRow({ name, logo, goals, winner }: Match['home'] & { winner: boolean }) {
-  const tbd = name === 'A definir';
+  const { lang } = useI18n();
+  const tbd = name === TBD_NAME;
   return (
     <div className={`flex items-center gap-1.5 ${winner ? 'font-semibold' : ''}`}>
       <TeamCrest name={name} crest={logo} className="h-4 w-4" />
-      <span className={`truncate ${tbd ? 'italic text-slate-400' : ''}`}>{name}</span>
+      <span className={`truncate ${tbd ? 'italic text-slate-400' : ''}`}>
+        {teamName(name, lang)}
+      </span>
       <span className="ml-auto tabular-nums text-slate-500">{goals ?? '–'}</span>
     </div>
   );
@@ -47,6 +51,7 @@ interface ColumnProps {
  * vertical line spans exactly from one slot's centre to the next slot's centre.
  */
 function Column({ round, side, outermost }: ColumnProps) {
+  const { lang } = useI18n();
   const isLeft = side === 'left';
   const toCenter = isLeft ? 'right-0 translate-x-full' : 'left-0 -translate-x-full';
   const toOuter = isLeft ? 'left-0 -translate-x-full' : 'right-0 translate-x-full';
@@ -55,7 +60,7 @@ function Column({ round, side, outermost }: ColumnProps) {
   return (
     <div className="flex flex-col">
       <div className="mb-2 whitespace-nowrap text-center text-[11px] font-semibold text-slate-500">
-        {round.label}
+        {stageLabel(round.stage, lang)}
       </div>
       <div className="flex flex-1 flex-col justify-around">
         {round.matches.map((match, i) => (
@@ -77,6 +82,7 @@ function Column({ round, side, outermost }: ColumnProps) {
 }
 
 function FinalColumn({ final, third }: { final: Match; third?: Match }) {
+  const { lang } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center gap-6 px-2">
       <TrophyIcon className="h-12 w-12 text-amber-400" />
@@ -88,7 +94,9 @@ function FinalColumn({ final, third }: { final: Match; third?: Match }) {
       </div>
       {third && (
         <div className="text-center">
-          <div className="mb-1 text-[11px] font-semibold text-slate-400">Disputa de 3º lugar</div>
+          <div className="mb-1 text-[11px] font-semibold text-slate-400">
+            {stageLabel('THIRD_PLACE', lang)}
+          </div>
           <MatchTile match={third} />
         </div>
       )}
@@ -98,11 +106,11 @@ function FinalColumn({ final, third }: { final: Match; third?: Match }) {
 
 export default function BracketPage() {
   const { data: rounds, isLoading, isError } = useBracket();
+  const { t, lang } = useI18n();
 
   if (isLoading) return <CardGridSkeleton count={8} />;
-  if (isError) return <p className="text-red-600">Não foi possível carregar o chaveamento.</p>;
-  if (!rounds || rounds.length === 0)
-    return <p className="text-slate-500">Mata-mata ainda não definido.</p>;
+  if (isError) return <p className="text-red-600">{t('bracket.error')}</p>;
+  if (!rounds || rounds.length === 0) return <p className="text-slate-500">{t('bracket.empty')}</p>;
 
   const final = rounds.find((r) => r.stage === 'FINAL');
   const third = rounds.find((r) => r.stage === 'THIRD_PLACE');
@@ -126,7 +134,9 @@ export default function BracketPage() {
       <div className="space-y-6 lg:hidden">
         {rounds.map((round) => (
           <section key={`m-${round.stage}`}>
-            <h2 className="mb-2 text-sm font-semibold text-slate-500">{round.label}</h2>
+            <h2 className="mb-2 text-sm font-semibold text-slate-500">
+              {stageLabel(round.stage, lang)}
+            </h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {round.matches.map((m) => (
                 <MatchTile key={m.id} match={m} className="w-full" />

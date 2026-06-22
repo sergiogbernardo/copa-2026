@@ -4,6 +4,7 @@
  */
 import { useMatches, useScorers } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
+import { teamName, useI18n, type Lang } from '../../lib/i18n';
 import { TeamCrest } from '../../components/TeamCrest';
 import { TableSkeleton } from '../../components/Skeletons';
 import type { Match } from '../../types';
@@ -43,29 +44,33 @@ function computeForm(matches: Match[]): TeamForm[] {
     .sort((a, b) => a.team.localeCompare(b.team));
 }
 
-// Display in the Brazilian convention: Vitória / Empate / Derrota.
 const RESULT_STYLES: Record<Result, string> = {
   W: 'bg-emerald-500',
   D: 'bg-slate-400',
   L: 'bg-red-500',
 };
-const RESULT_LABEL: Record<Result, string> = { W: 'V', D: 'E', L: 'D' };
-const RESULT_TITLE: Record<Result, string> = {
-  W: 'Vitória',
-  D: 'Empate',
-  L: 'Derrota',
+// Single letter shown inside each dot, by language (PT: V/E/D, EN: W/D/L).
+const RESULT_LETTER: Record<Lang, Record<Result, string>> = {
+  pt: { W: 'V', D: 'E', L: 'D' },
+  en: { W: 'W', D: 'D', L: 'L' },
+};
+const RESULT_TITLE_KEY: Record<Result, string> = {
+  W: 'result.win',
+  D: 'result.draw',
+  L: 'result.loss',
 };
 
 function FormDots({ results }: { results: Result[] }) {
+  const { t, lang } = useI18n();
   return (
     <span className="flex gap-1">
       {results.map((result, i) => (
         <span
           key={i}
-          title={RESULT_TITLE[result]}
+          title={t(RESULT_TITLE_KEY[result])}
           className={`inline-block h-4 w-4 rounded-full text-center text-[10px] font-bold leading-4 text-white ${RESULT_STYLES[result]}`}
         >
-          {RESULT_LABEL[result]}
+          {RESULT_LETTER[lang][result]}
         </span>
       ))}
     </span>
@@ -76,6 +81,7 @@ export default function InsightsPage() {
   const { data: scorers, isLoading: scorersLoading, isError: scorersError } = useScorers();
   const { data: matches, isLoading: matchesLoading } = useMatches();
   const q = useSearchQuery();
+  const { t, lang } = useI18n();
 
   const filteredScorers = (scorers ?? [])
     .map((s, i) => ({ ...s, rank: i + 1 }))
@@ -85,13 +91,11 @@ export default function InsightsPage() {
   return (
     <div className="mx-auto grid w-full max-w-6xl items-start gap-8 lg:grid-cols-2">
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Artilheiros</h2>
+        <h2 className="text-lg font-semibold">{t('insights.scorers')}</h2>
         {scorersLoading && <TableSkeleton count={5} />}
-        {scorersError && <p className="text-red-600">Não foi possível carregar os artilheiros.</p>}
+        {scorersError && <p className="text-red-600">{t('insights.scorersError')}</p>}
         {scorers && filteredScorers.length === 0 && (
-          <p className="text-slate-500">
-            {q ? 'Nenhum artilheiro encontrado.' : 'Sem gols registrados ainda.'}
-          </p>
+          <p className="text-slate-500">{q ? t('insights.noScorers') : t('insights.noGoals')}</p>
         )}
         {filteredScorers.length > 0 && (
           <ol className="space-y-2">
@@ -103,7 +107,7 @@ export default function InsightsPage() {
                 <span className="w-5 text-slate-400">{scorer.rank}</span>
                 <TeamCrest name={scorer.team} crest={scorer.logo} className="h-5 w-5" />
                 <span className="font-medium">{scorer.player}</span>
-                <span className="text-slate-400">{scorer.team}</span>
+                <span className="text-slate-400">{teamName(scorer.team, lang)}</span>
                 <span className="ml-auto font-bold tabular-nums">{scorer.goals}</span>
               </li>
             ))}
@@ -112,18 +116,19 @@ export default function InsightsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Sequência</h2>
+        <h2 className="text-lg font-semibold">{t('insights.form')}</h2>
         <p className="text-xs text-slate-400">
-          Últimos resultados, mais recente à esquerda —{' '}
-          <span className="font-semibold text-emerald-600">V</span> vitória,{' '}
-          <span className="font-semibold text-slate-500">E</span> empate,{' '}
-          <span className="font-semibold text-red-500">D</span> derrota.
+          {t('insights.formIntro')}{' '}
+          <span className="font-semibold text-emerald-600">{RESULT_LETTER[lang].W}</span>{' '}
+          {t('result.win').toLowerCase()},{' '}
+          <span className="font-semibold text-slate-500">{RESULT_LETTER[lang].D}</span>{' '}
+          {t('result.draw').toLowerCase()},{' '}
+          <span className="font-semibold text-red-500">{RESULT_LETTER[lang].L}</span>{' '}
+          {t('result.loss').toLowerCase()}.
         </p>
         {matchesLoading && <TableSkeleton count={5} />}
         {!matchesLoading && form.length === 0 && (
-          <p className="text-slate-500">
-            {q ? 'Nenhuma seleção encontrada.' : 'Sem jogos encerrados ainda.'}
-          </p>
+          <p className="text-slate-500">{q ? t('insights.noTeams') : t('insights.noFinished')}</p>
         )}
         {form.length > 0 && (
           <ul className="space-y-2">
@@ -133,7 +138,7 @@ export default function InsightsPage() {
                 className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm shadow-sm"
               >
                 <TeamCrest name={entry.team} crest={entry.logo} className="h-5 w-5" />
-                <span className="font-medium">{entry.team}</span>
+                <span className="font-medium">{teamName(entry.team, lang)}</span>
                 <span className="ml-auto">
                   <FormDots results={entry.results} />
                 </span>

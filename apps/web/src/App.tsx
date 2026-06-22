@@ -8,10 +8,12 @@ import PlayersPage from './features/players/PlayersPage';
 import { LiveBadge } from './components/LiveBadge';
 import { TeamModalProvider } from './components/TeamModal';
 import { FavoriteTeamProvider } from './components/FavoriteTeam';
+import { LanguageProvider, useI18n } from './lib/i18n';
 import {
   BracketIcon,
   CalendarIcon,
   ChartIcon,
+  GlobeIcon,
   MenuIcon,
   SearchIcon,
   TableIcon,
@@ -19,11 +21,11 @@ import {
 } from './components/icons';
 
 const navItems = [
-  { to: '/', label: 'Jogos', end: true, Icon: CalendarIcon },
-  { to: '/grupos', label: 'Grupos', Icon: TableIcon },
-  { to: '/chaveamento', label: 'Chaveamento', Icon: BracketIcon },
-  { to: '/jogadores', label: 'Jogadores', Icon: UsersIcon },
-  { to: '/insights', label: 'Insights', Icon: ChartIcon },
+  { to: '/', labelKey: 'nav.matches', end: true, Icon: CalendarIcon },
+  { to: '/grupos', labelKey: 'nav.groups', Icon: TableIcon },
+  { to: '/chaveamento', labelKey: 'nav.bracket', Icon: BracketIcon },
+  { to: '/jogadores', labelKey: 'nav.players', Icon: UsersIcon },
+  { to: '/insights', labelKey: 'nav.insights', Icon: ChartIcon },
 ];
 
 const COLLAPSE_KEY = 'copa2026:sidebar-collapsed';
@@ -37,34 +39,56 @@ function NavItems({
   search: string;
   onNavigate?: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <nav className="flex flex-col gap-1 p-2">
-      {navItems.map(({ to, label, end, Icon }) => (
-        <NavLink
-          key={to}
-          // Keep the active search term when switching pages.
-          to={{ pathname: to, search }}
-          end={end}
-          onClick={onNavigate}
-          title={collapsed ? label : undefined}
-          className={({ isActive }) =>
-            `flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors ${
-              isActive
-                ? 'bg-pitch/10 font-semibold text-pitch'
-                : 'text-slate-600 hover:bg-slate-100'
-            } ${collapsed ? 'justify-center' : ''}`
-          }
-        >
-          <Icon className="h-5 w-5 shrink-0" />
-          {!collapsed && <span className="truncate">{label}</span>}
-        </NavLink>
-      ))}
+      {navItems.map(({ to, labelKey, end, Icon }) => {
+        const label = t(labelKey);
+        return (
+          <NavLink
+            key={to}
+            // Keep the active search term when switching pages.
+            to={{ pathname: to, search }}
+            end={end}
+            onClick={onNavigate}
+            title={collapsed ? label : undefined}
+            className={({ isActive }) =>
+              `flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors ${
+                isActive
+                  ? 'bg-pitch/10 font-semibold text-pitch'
+                  : 'text-slate-600 hover:bg-slate-100'
+              } ${collapsed ? 'justify-center' : ''}`
+            }
+          >
+            <Icon className="h-5 w-5 shrink-0" />
+            {!collapsed && <span className="truncate">{label}</span>}
+          </NavLink>
+        );
+      })}
     </nav>
+  );
+}
+
+/** Header button that toggles the UI language between Portuguese and English. */
+function LanguageToggle() {
+  const { lang, toggle, t } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      aria-label={t('a11y.switchLang')}
+      title={t('a11y.switchLang')}
+      className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase hover:bg-white/25"
+    >
+      <GlobeIcon className="h-4 w-4" />
+      {lang}
+    </button>
   );
 }
 
 function SearchBox() {
   const [params, setParams] = useSearchParams();
+  const { t } = useI18n();
   const value = params.get('q') ?? '';
 
   return (
@@ -73,8 +97,8 @@ function SearchBox() {
       <input
         type="search"
         value={value}
-        placeholder="Buscar seleção ou jogador…"
-        aria-label="Buscar seleção ou jogador"
+        placeholder={t('search.placeholder')}
+        aria-label={t('search.placeholder')}
         onChange={(e) => {
           const next = new URLSearchParams(params);
           if (e.target.value) next.set('q', e.target.value);
@@ -87,10 +111,11 @@ function SearchBox() {
   );
 }
 
-export default function App() {
+function AppShell() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
   const [mobileOpen, setMobileOpen] = useState(false);
   const { search } = useLocation();
+  const { t } = useI18n();
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, String(collapsed));
@@ -104,7 +129,7 @@ export default function App() {
             {/* Mobile: open drawer. Desktop: collapse/expand the sidebar. */}
             <button
               type="button"
-              aria-label="Alternar menu"
+              aria-label={t('a11y.toggleMenu')}
               onClick={() => {
                 // Desktop collapses the sidebar; mobile opens the drawer.
                 if (window.matchMedia('(min-width: 768px)').matches) {
@@ -117,9 +142,10 @@ export default function App() {
             >
               <MenuIcon className="h-6 w-6" />
             </button>
-            <h1 className="hidden text-lg font-bold sm:block">Copa 2026 · Ao vivo</h1>
+            <h1 className="hidden text-lg font-bold sm:block">{t('header.title')}</h1>
             <div className="ml-auto flex items-center gap-3">
               <SearchBox />
+              <LanguageToggle />
               <LiveBadge />
             </div>
           </header>
@@ -161,7 +187,7 @@ export default function App() {
                 <Route path="/insights" element={<InsightsPage />} />
               </Routes>
               <footer className="mx-auto mt-10 max-w-6xl border-t border-slate-200 pt-4 text-center text-xs text-slate-400">
-                © 2026 Sergio Bernardo · Dados:{' '}
+                © 2026 Sergio Bernardo · {t('footer.data')}:{' '}
                 <a
                   href="https://www.football-data.org/"
                   target="_blank"
@@ -176,5 +202,13 @@ export default function App() {
         </div>
       </TeamModalProvider>
     </FavoriteTeamProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppShell />
+    </LanguageProvider>
   );
 }

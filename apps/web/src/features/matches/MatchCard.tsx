@@ -2,12 +2,14 @@ import type { Match } from '../../types';
 import StatusBadge from '../../components/StatusBadge';
 import { TeamCrest } from '../../components/TeamCrest';
 import { StarIcon } from '../../components/icons';
+import { teamName, translateVenue, useI18n } from '../../lib/i18n';
 
 function Side({ name, logo, goals }: Match['home']) {
+  const { lang } = useI18n();
   return (
     <div className="flex items-center gap-2">
       <TeamCrest name={name} crest={logo} className="h-6 w-6" />
-      <span className="font-medium">{name}</span>
+      <span className="font-medium">{teamName(name, lang)}</span>
       {goals !== null && <span className="ml-auto text-lg font-bold tabular-nums">{goals}</span>}
     </div>
   );
@@ -20,6 +22,8 @@ export default function MatchCard({
   match: Match;
   favorite?: boolean;
 }) {
+  const { lang } = useI18n();
+  const venue = translateVenue(match.venue, lang);
   return (
     <article
       className={`rounded-lg border bg-white p-4 shadow-sm ${
@@ -31,9 +35,9 @@ export default function MatchCard({
           <StatusBadge status={match.status} kickoff={match.kickoff} />
           {favorite && <StarIcon filled className="h-4 w-4 text-amber-400" />}
         </div>
-        {match.venue && (
+        {venue && (
           <span className="truncate text-xs text-slate-400">
-            {match.venue}
+            {venue}
             {match.city ? ` · ${match.city}` : ''}
           </span>
         )}
