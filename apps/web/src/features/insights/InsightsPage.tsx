@@ -4,7 +4,7 @@
  */
 import { useMatches, useScorers } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
-import { teamName, useI18n, type Lang } from '../../lib/i18n';
+import { teamMatchesQuery, teamName, useI18n, type Lang } from '../../lib/i18n';
 import { TeamCrest } from '../../components/TeamCrest';
 import { TableSkeleton } from '../../components/Skeletons';
 import type { Match } from '../../types';
@@ -85,8 +85,8 @@ export default function InsightsPage() {
 
   const filteredScorers = (scorers ?? [])
     .map((s, i) => ({ ...s, rank: i + 1 }))
-    .filter((s) => includesQuery(s.player, q) || includesQuery(s.team, q));
-  const form = matches ? computeForm(matches).filter((f) => includesQuery(f.team, q)) : [];
+    .filter((s) => includesQuery(s.player, q) || teamMatchesQuery(s.team, q, lang));
+  const form = matches ? computeForm(matches).filter((f) => teamMatchesQuery(f.team, q, lang)) : [];
 
   return (
     <div className="mx-auto grid w-full max-w-6xl items-start gap-8 lg:grid-cols-2">

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useMatches } from '../../lib/hooks';
 import { isLiveMatch } from '../../lib/matchStatus';
-import { includesQuery, useSearchQuery } from '../../lib/search';
-import { TBD_NAME, useI18n } from '../../lib/i18n';
+import { useSearchQuery } from '../../lib/search';
+import { TBD_NAME, teamMatchesQuery, teamName, useI18n } from '../../lib/i18n';
 import { useFavoriteTeam } from '../../components/FavoriteTeam';
 import { CardGridSkeleton } from '../../components/Skeletons';
 import { StarIcon } from '../../components/icons';
@@ -80,7 +80,7 @@ export default function MatchesPage() {
   const { data: matches, isLoading, isError } = useMatches();
   const { favoriteTeam, setFavoriteTeam } = useFavoriteTeam();
   const q = useSearchQuery();
-  const { t, locale } = useI18n();
+  const { t, lang, locale } = useI18n();
 
   const availableMatches = (matches ?? []).filter((match) => !bothUndecided(match));
   const teams = [
@@ -89,7 +89,8 @@ export default function MatchesPage() {
         .flatMap((match) => [match.home.name, match.away.name])
         .filter((team) => team !== TBD_NAME),
     ),
-  ].sort((a, b) => a.localeCompare(b));
+    // Sort by the localized display name so the dropdown reads alphabetically.
+  ].sort((a, b) => teamName(a, lang).localeCompare(teamName(b, lang)));
 
   const filtered = availableMatches
     // Hide fixtures whose teams aren't defined yet; they appear once a team is set.
@@ -99,7 +100,9 @@ export default function MatchesPage() {
         ? m.home.name === favoriteTeam || m.away.name === favoriteTeam
         : true,
     )
-    .filter((m) => includesQuery(m.home.name, q) || includesQuery(m.away.name, q));
+    .filter(
+      (m) => teamMatchesQuery(m.home.name, q, lang) || teamMatchesQuery(m.away.name, q, lang),
+    );
   // "Todos" and "Encerrados" read better most-recent-first; "Próximos"/"Hoje"/
   // "Ao vivo" stay chronological (nearest kickoff first).
   const newestFirst = filter === 'all' || filter === 'finished';
@@ -140,7 +143,7 @@ export default function MatchesPage() {
               <option value="">{t('favorite.choose')}</option>
               {teams.map((team) => (
                 <option key={team} value={team}>
-                  {team}
+                  {teamName(team, lang)}
                 </option>
               ))}
             </select>
@@ -154,7 +157,7 @@ export default function MatchesPage() {
                 favoriteOnly ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-800'
               }`}
             >
-              {t('favorite.only', { team: favoriteTeam })}
+              {t('favorite.only', { team: teamName(favoriteTeam, lang) })}
             </button>
           )}
         </div>

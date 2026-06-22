@@ -92,7 +92,7 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
           {team?.crest && <img src={team.crest} alt="" className="h-8 w-8" />}
           <div>
             <h2 id="team-overview-title" className="text-lg font-bold leading-tight">
-              {team?.name ?? teamName}
+              {displayTeamName(team?.name ?? teamName, lang)}
             </h2>
             {team?.coach && (
               <p className="text-xs text-white/80">
