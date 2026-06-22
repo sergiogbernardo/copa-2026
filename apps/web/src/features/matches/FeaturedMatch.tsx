@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TeamCrest } from '../../components/TeamCrest';
+import { isLiveMatch } from '../../lib/matchStatus';
 import type { Match } from '../../types';
-
-const isLive = (match: Match) => match.status === 'LIVE' || match.status === 'HT';
 
 function countdown(kickoff: string, now: number): string {
   const remaining = Math.max(0, new Date(kickoff).getTime() - now);
@@ -16,7 +15,7 @@ function countdown(kickoff: string, now: number): string {
 }
 
 export function pickFeaturedMatch(matches: Match[], now = Date.now()): Match | null {
-  const live = matches.find(isLive);
+  const live = matches.find((match) => isLiveMatch(match, now));
   if (live) return live;
   return (
     matches.find((match) => match.status === 'NS' && new Date(match.kickoff).getTime() >= now) ??
@@ -34,7 +33,7 @@ export default function FeaturedMatch({ matches }: { matches: Match[] }) {
   }, []);
 
   if (!match) return null;
-  const live = isLive(match);
+  const live = isLiveMatch(match, now);
 
   return (
     <section className="overflow-hidden rounded-xl bg-gradient-to-r from-pitch to-emerald-700 p-4 text-white shadow-sm">

@@ -1,9 +1,10 @@
 import { useMatches } from '../lib/hooks';
+import { isLiveMatch } from '../lib/matchStatus';
 
 /** Topbar indicator: shows a pulsing badge with the count of in-play matches. */
 export function LiveBadge() {
   const { data: matches } = useMatches();
-  const liveCount = matches?.filter((m) => m.status === 'LIVE' || m.status === 'HT').length ?? 0;
+  const liveCount = matches?.filter((m) => isLiveMatch(m)).length ?? 0;
 
   if (liveCount === 0) return null;
 

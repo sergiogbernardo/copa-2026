@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMatches } from '../../lib/hooks';
+import { isLiveMatch } from '../../lib/matchStatus';
 import { includesQuery, useSearchQuery } from '../../lib/search';
 import { useFavoriteTeam } from '../../components/FavoriteTeam';
 import { CardGridSkeleton } from '../../components/Skeletons';
@@ -21,7 +22,6 @@ const FILTERS: { key: Filter; label: string }[] = [
 /** A fixture with neither team decided yet (e.g. an empty knockout slot). */
 const bothUndecided = (m: Match) => m.home.name === 'A definir' && m.away.name === 'A definir';
 
-const isLive = (m: Match) => m.status === 'LIVE' || m.status === 'HT';
 const isToday = (m: Match) => {
   const now = new Date();
   const d = new Date(m.kickoff);
@@ -35,7 +35,7 @@ const isToday = (m: Match) => {
 function matchesFilter(match: Match, filter: Filter): boolean {
   switch (filter) {
     case 'live':
-      return isLive(match);
+      return isLiveMatch(match);
     case 'today':
       return isToday(match);
     case 'upcoming':

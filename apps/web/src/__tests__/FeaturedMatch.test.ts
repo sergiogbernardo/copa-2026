@@ -24,4 +24,11 @@ describe('pickFeaturedMatch', () => {
     const next = match(2, 'NS', '2026-06-23T18:00:00Z');
     expect(pickFeaturedMatch([past, next], Date.parse('2026-06-22T18:00:00Z'))).toBe(next);
   });
+
+  it('skips a stale live status and falls back to the next game', () => {
+    // Upstream still reports LIVE hours after kickoff; do not feature it.
+    const stale = match(1, 'LIVE', '2026-06-22T17:00:00Z');
+    const next = match(2, 'NS', '2026-06-23T18:00:00Z');
+    expect(pickFeaturedMatch([stale, next], Date.parse('2026-06-22T21:40:00Z'))).toBe(next);
+  });
 });
