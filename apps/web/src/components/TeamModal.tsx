@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useMatches, useScorers, useTeams } from '../lib/hooks';
-import { POSITION_ORDER, positionGroup } from '../lib/positions';
+import { POSITION_ORDER, positionGroup, positionLabel } from '../lib/positions';
 import type { Match } from '../types';
 import { CloseIcon } from './icons';
 
@@ -66,14 +66,14 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={onClose}
     >
       <div
-        className="my-8 w-full max-w-2xl rounded-lg bg-white shadow-xl"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="sticky top-0 flex items-center gap-3 rounded-t-lg bg-pitch px-4 py-3 text-white">
+        <header className="flex shrink-0 items-center gap-3 bg-pitch px-4 py-3 text-white">
           {team?.crest && <img src={team.crest} alt="" className="h-8 w-8" />}
           <div>
             <h2 className="text-lg font-bold leading-tight">{team?.name ?? teamName}</h2>
@@ -89,7 +89,7 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
           </button>
         </header>
 
-        <div className="space-y-6 p-4">
+        <div className="space-y-6 overflow-y-auto p-4">
           {team?.clubColors && (
             <p className="text-xs text-slate-500">
               Cores: <span className="font-medium text-slate-700">{team.clubColors}</span>
@@ -143,7 +143,9 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
                         {players.map((p) => (
                           <li key={p.id} className="flex justify-between py-0.5">
                             <span>{p.name}</span>
-                            <span className="text-xs text-slate-400">{p.position}</span>
+                            <span className="text-xs text-slate-400">
+                              {positionLabel(p.position)}
+                            </span>
                           </li>
                         ))}
                       </ul>

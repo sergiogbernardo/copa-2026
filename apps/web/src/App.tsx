@@ -99,8 +99,8 @@ export default function App() {
 
   return (
     <TeamModalProvider>
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
-      <header className="sticky top-0 z-30 flex items-center gap-3 bg-pitch px-4 py-3 text-white shadow">
+    <div className="flex h-screen flex-col bg-slate-50 text-slate-900">
+      <header className="z-30 flex shrink-0 items-center gap-3 bg-pitch px-4 py-3 text-white shadow">
         {/* Mobile: open drawer. Desktop: collapse/expand the sidebar. */}
         <button
           type="button"
@@ -120,10 +120,10 @@ export default function App() {
         </div>
       </header>
 
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1">
         {/* Desktop sidebar */}
         <aside
-          className={`hidden shrink-0 border-r border-slate-200 bg-white md:block ${
+          className={`hidden shrink-0 overflow-y-auto border-r border-slate-200 bg-white md:block ${
             collapsed ? 'w-16' : 'w-56'
           }`}
         >
@@ -143,7 +143,7 @@ export default function App() {
           </div>
         )}
 
-        <main className="min-w-0 flex-1 px-4 py-6">
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6">
           {/* Each page sets its own max width; the bracket uses the full width. */}
           <Routes>
             <Route path="/" element={<MatchesPage />} />
