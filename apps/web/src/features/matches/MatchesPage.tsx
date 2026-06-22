@@ -73,7 +73,7 @@ export default function MatchesPage() {
   const days = groupByDay(filtered);
 
   return (
-    <section className="space-y-4">
+    <section className="mx-auto w-full max-w-6xl space-y-4">
       <div className="flex flex-wrap gap-2">
         {FILTERS.map(({ key, label }) => (
           <button
