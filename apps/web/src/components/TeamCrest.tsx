@@ -1,4 +1,5 @@
 import { useTeamModal } from './TeamModal';
+import { TBD_NAME, useI18n } from '../lib/i18n';
 
 interface Props {
   name: string;
@@ -10,7 +11,8 @@ interface Props {
 /** A team flag that opens the team overview modal when clicked. */
 export function TeamCrest({ name, crest, className = 'h-6 w-6' }: Props) {
   const { openTeam } = useTeamModal();
-  const tbd = !name || name === 'A definir';
+  const { t } = useI18n();
+  const tbd = !name || name === TBD_NAME;
 
   if (tbd) {
     return <span className={`${className} shrink-0 rounded-full bg-slate-100`} />;
@@ -20,7 +22,7 @@ export function TeamCrest({ name, crest, className = 'h-6 w-6' }: Props) {
     <button
       type="button"
       onClick={() => openTeam(name)}
-      title={`Ver ${name}`}
+      title={t('crest.view', { name })}
       className="shrink-0 rounded transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-pitch/50"
     >
       {crest ? (

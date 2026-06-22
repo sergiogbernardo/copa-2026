@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMatches, useScorers, useTeams } from '../lib/hooks';
-import { POSITION_ORDER, positionGroup, positionLabel } from '../lib/positions';
+import { POSITION_ORDER, positionGroup, positionGroupLabel, positionLabel } from '../lib/positions';
+import { teamName as displayTeamName, useI18n } from '../lib/i18n';
 import type { Match } from '../types';
 import { useFavoriteTeam } from './FavoriteTeam';
 import { CloseIcon, StarIcon } from './icons';
@@ -32,16 +33,17 @@ function scoreLabel(match: Match): string {
 }
 
 function MatchRow({ match }: { match: Match }) {
-  const date = new Date(match.kickoff).toLocaleDateString('pt-BR', {
+  const { lang, locale } = useI18n();
+  const date = new Date(match.kickoff).toLocaleDateString(locale, {
     day: '2-digit',
     month: '2-digit',
   });
   return (
     <li className="flex items-center gap-2 border-t border-slate-100 py-1.5 text-sm">
       <span className="w-12 shrink-0 text-xs text-slate-400">{date}</span>
-      <span className="flex-1 truncate text-right">{match.home.name}</span>
+      <span className="flex-1 truncate text-right">{displayTeamName(match.home.name, lang)}</span>
       <span className="shrink-0 font-semibold tabular-nums">{scoreLabel(match)}</span>
-      <span className="flex-1 truncate">{match.away.name}</span>
+      <span className="flex-1 truncate">{displayTeamName(match.away.name, lang)}</span>
     </li>
   );
 }
@@ -52,6 +54,7 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
   const { data: matches } = useMatches();
   const { data: scorers } = useScorers();
   const { favoriteTeam, setFavoriteTeam } = useFavoriteTeam();
+  const { t, lang } = useI18n();
 
   // Close on Escape.
   useEffect(() => {
@@ -91,11 +94,15 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
             <h2 id="team-overview-title" className="text-lg font-bold leading-tight">
               {team?.name ?? teamName}
             </h2>
-            {team?.coach && <p className="text-xs text-white/80">Técnico: {team.coach}</p>}
+            {team?.coach && (
+              <p className="text-xs text-white/80">
+                {t('modal.coach')}: {team.coach}
+              </p>
+            )}
           </div>
           <button
             type="button"
-            aria-label={favoriteTeam === teamName ? 'Remover dos favoritos' : 'Favoritar seleção'}
+            aria-label={favoriteTeam === teamName ? t('modal.unfavorite') : t('modal.favorite')}
             aria-pressed={favoriteTeam === teamName}
             onClick={() => setFavoriteTeam(favoriteTeam === teamName ? '' : teamName)}
             className="ml-auto rounded p-1 hover:bg-white/10"
@@ -105,7 +112,7 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
           <button
             ref={closeButtonRef}
             type="button"
-            aria-label="Fechar"
+            aria-label={t('common.close')}
             onClick={onClose}
             className="rounded p-1 hover:bg-white/10"
           >
@@ -116,14 +123,15 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
         <div className="space-y-6 overflow-y-auto p-4">
           {team?.clubColors && (
             <p className="text-xs text-slate-500">
-              Cores: <span className="font-medium text-slate-700">{team.clubColors}</span>
+              {t('modal.colors')}:{' '}
+              <span className="font-medium text-slate-700">{team.clubColors}</span>
             </p>
           )}
 
           <section>
-            <h3 className="mb-1 text-sm font-semibold text-slate-500">Jogos</h3>
+            <h3 className="mb-1 text-sm font-semibold text-slate-500">{t('modal.matches')}</h3>
             {teamMatches.length === 0 ? (
-              <p className="text-sm text-slate-400">Sem jogos.</p>
+              <p className="text-sm text-slate-400">{t('modal.noMatches')}</p>
             ) : (
               <ul>
                 {teamMatches.map((m) => (
@@ -135,7 +143,7 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
 
           {teamScorers.length > 0 && (
             <section>
-              <h3 className="mb-1 text-sm font-semibold text-slate-500">Artilheiros</h3>
+              <h3 className="mb-1 text-sm font-semibold text-slate-500">{t('insights.scorers')}</h3>
               <ul className="text-sm">
                 {teamScorers.map((s, i) => (
                   <li key={`${s.player}-${i}`} className="flex justify-between py-0.5">
@@ -149,10 +157,10 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
 
           <section>
             <h3 className="mb-2 text-sm font-semibold text-slate-500">
-              Elenco {team?.squad.length ? `(${team.squad.length})` : ''}
+              {t('modal.squad')} {team?.squad.length ? `(${team.squad.length})` : ''}
             </h3>
             {!team || team.squad.length === 0 ? (
-              <p className="text-sm text-slate-400">Elenco indisponível.</p>
+              <p className="text-sm text-slate-400">{t('modal.squadUnavailable')}</p>
             ) : (
               <div className="space-y-3">
                 {POSITION_ORDER.map((group) => {
@@ -161,14 +169,14 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
                   return (
                     <div key={group}>
                       <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        {group}
+                        {positionGroupLabel(group, lang)}
                       </h4>
                       <ul className="text-sm">
                         {players.map((p) => (
                           <li key={p.id} className="flex justify-between py-0.5">
                             <span>{p.name}</span>
                             <span className="text-xs text-slate-400">
-                              {positionLabel(p.position)}
+                              {positionLabel(p.position, lang)}
                             </span>
                           </li>
                         ))}

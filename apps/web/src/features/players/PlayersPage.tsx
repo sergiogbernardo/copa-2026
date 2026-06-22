@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useTeams } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
-import { positionGroup } from '../../lib/positions';
+import { positionGroup, positionGroupLabel } from '../../lib/positions';
+import { useI18n } from '../../lib/i18n';
 import { TeamCrest } from '../../components/TeamCrest';
 import { CardGridSkeleton } from '../../components/Skeletons';
 
@@ -16,12 +17,13 @@ interface FlatPlayer {
 export default function PlayersPage() {
   const { data: teams, isLoading, isError } = useTeams();
   const q = useSearchQuery();
+  const { t, lang } = useI18n();
   const [teamFilter, setTeamFilter] = useState('');
 
   if (isLoading) return <CardGridSkeleton count={9} />;
-  if (isError) return <p className="text-red-600">Não foi possível carregar os jogadores.</p>;
+  if (isError) return <p className="text-red-600">{t('players.error')}</p>;
   if (!teams || teams.length === 0)
-    return <p className="text-slate-500">Jogadores indisponíveis.</p>;
+    return <p className="text-slate-500">{t('players.unavailable')}</p>;
 
   const players: FlatPlayer[] = teams.flatMap((t) =>
     t.squad.map((p) => ({
@@ -43,21 +45,23 @@ export default function PlayersPage() {
         <select
           value={teamFilter}
           onChange={(e) => setTeamFilter(e.target.value)}
-          aria-label="Filtrar por seleção"
+          aria-label={t('players.filterAria')}
           className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm"
         >
-          <option value="">Todas as seleções ({teams.length})</option>
+          <option value="">{t('players.allTeams', { count: teams.length })}</option>
           {teams.map((t) => (
             <option key={t.id} value={t.name}>
               {t.name}
             </option>
           ))}
         </select>
-        <span className="text-sm text-slate-400">{filtered.length} jogadores</span>
+        <span className="text-sm text-slate-400">
+          {t('players.count', { count: filtered.length })}
+        </span>
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-slate-500">Nenhum jogador encontrado.</p>
+        <p className="text-slate-500">{t('players.empty')}</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((p) => (
@@ -69,7 +73,7 @@ export default function PlayersPage() {
               <div className="min-w-0">
                 <p className="truncate font-medium">{p.name}</p>
                 <p className="truncate text-xs text-slate-400">
-                  {positionGroup(p.position)} · {p.team}
+                  {positionGroupLabel(positionGroup(p.position), lang)} · {p.team}
                 </p>
               </div>
             </div>
