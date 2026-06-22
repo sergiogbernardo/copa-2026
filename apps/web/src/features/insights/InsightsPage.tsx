@@ -40,10 +40,17 @@ function computeForm(matches: Match[]): TeamForm[] {
     .sort((a, b) => a.team.localeCompare(b.team));
 }
 
+// Display in the Brazilian convention: Vitória / Empate / Derrota.
 const RESULT_STYLES: Record<Result, string> = {
   W: 'bg-emerald-500',
   D: 'bg-slate-400',
   L: 'bg-red-500',
+};
+const RESULT_LABEL: Record<Result, string> = { W: 'V', D: 'E', L: 'D' };
+const RESULT_TITLE: Record<Result, string> = {
+  W: 'Vitória',
+  D: 'Empate',
+  L: 'Derrota',
 };
 
 function FormDots({ results }: { results: Result[] }) {
@@ -52,10 +59,10 @@ function FormDots({ results }: { results: Result[] }) {
       {results.map((result, i) => (
         <span
           key={i}
-          title={result}
+          title={RESULT_TITLE[result]}
           className={`inline-block h-4 w-4 rounded-full text-center text-[10px] font-bold leading-4 text-white ${RESULT_STYLES[result]}`}
         >
-          {result}
+          {RESULT_LABEL[result]}
         </span>
       ))}
     </span>
@@ -99,7 +106,12 @@ export default function InsightsPage() {
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Forma recente</h2>
-        <p className="text-xs text-slate-400">Últimos resultados (mais recente à esquerda).</p>
+        <p className="text-xs text-slate-400">
+          Últimos resultados, mais recente à esquerda —{' '}
+          <span className="font-semibold text-emerald-600">V</span> vitória,{' '}
+          <span className="font-semibold text-slate-500">E</span> empate,{' '}
+          <span className="font-semibold text-red-500">D</span> derrota.
+        </p>
         {matchesLoading && <p className="text-slate-500">Carregando resultados…</p>}
         {!matchesLoading && form.length === 0 && (
           <p className="text-slate-500">Sem jogos encerrados ainda.</p>
