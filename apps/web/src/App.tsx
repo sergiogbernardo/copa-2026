@@ -160,6 +160,9 @@ export default function App() {
                 <Route path="/jogadores" element={<PlayersPage />} />
                 <Route path="/insights" element={<InsightsPage />} />
               </Routes>
+              <footer className="mx-auto mt-10 max-w-6xl border-t border-slate-200 pt-4 text-center text-xs text-slate-400">
+                © 2026 Sergio Bernardo
+              </footer>
             </main>
           </div>
         </div>
