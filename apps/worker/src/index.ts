@@ -1,4 +1,10 @@
-import { DEFAULT_SEASON, fetchMatches } from './footballApi';
+import {
+  DEFAULT_SEASON,
+  fetchBracket,
+  fetchMatches,
+  fetchScorers,
+  fetchStandings,
+} from './footballApi';
 
 export interface Env {
   FOOTBALL_DATA_TOKEN: string;
@@ -34,19 +40,29 @@ export default {
     }
 
     const url = new URL(request.url);
+    // Focus on 2026, but allow ?season=2022/2024 for the covered editions.
+    const season = url.searchParams.get('season') ?? DEFAULT_SEASON;
 
     try {
       if (url.pathname === '/matches') {
         const live = url.searchParams.get('live') === 'true';
-        // Focus on 2026, but allow ?season=2022/2024 for the covered editions.
-        const season = url.searchParams.get('season') ?? DEFAULT_SEASON;
         const matches = await fetchMatches(env.FOOTBALL_DATA_TOKEN, { live, season });
         return json(matches, origin);
       }
 
-      // /standings is stubbed until the basic flow is validated.
       if (url.pathname === '/standings') {
-        return json([], origin);
+        const standings = await fetchStandings(env.FOOTBALL_DATA_TOKEN, season);
+        return json(standings, origin);
+      }
+
+      if (url.pathname === '/bracket') {
+        const bracket = await fetchBracket(env.FOOTBALL_DATA_TOKEN, season);
+        return json(bracket, origin);
+      }
+
+      if (url.pathname === '/scorers') {
+        const scorers = await fetchScorers(env.FOOTBALL_DATA_TOKEN, season);
+        return json(scorers, origin);
       }
 
       return json({ error: 'Not found' }, origin, 404);

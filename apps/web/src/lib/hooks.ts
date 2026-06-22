@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMatches, getStandings } from './apiClient';
+import { getBracket, getMatches, getScorers, getStandings } from './apiClient';
 
 /** Live matches refetch often; upcoming fixtures can be cached longer. */
 export function useMatches(live = false) {
@@ -15,5 +15,21 @@ export function useStandings() {
     queryKey: ['standings'],
     queryFn: getStandings,
     refetchInterval: 5 * 60_000,
+  });
+}
+
+export function useBracket() {
+  return useQuery({
+    queryKey: ['bracket'],
+    queryFn: getBracket,
+    refetchInterval: 5 * 60_000,
+  });
+}
+
+export function useScorers() {
+  return useQuery({
+    queryKey: ['scorers'],
+    queryFn: getScorers,
+    refetchInterval: 10 * 60_000,
   });
 }
