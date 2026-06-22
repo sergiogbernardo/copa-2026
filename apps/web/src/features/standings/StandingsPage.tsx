@@ -10,7 +10,7 @@ export default function StandingsPage() {
   const groups = [...new Set(rows.map((row) => row.group))];
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       {groups.map((group) => (
         <section key={group}>
           <h2 className="mb-2 font-semibold">{group}</h2>

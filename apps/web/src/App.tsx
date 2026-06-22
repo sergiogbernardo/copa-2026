@@ -96,15 +96,14 @@ export default function App() {
           </div>
         )}
 
-        <main className="flex-1 px-4 py-6">
-          <div className="mx-auto w-full max-w-6xl">
-            <Routes>
-              <Route path="/" element={<MatchesPage />} />
-              <Route path="/grupos" element={<StandingsPage />} />
-              <Route path="/chaveamento" element={<BracketPage />} />
-              <Route path="/insights" element={<InsightsPage />} />
-            </Routes>
-          </div>
+        <main className="min-w-0 flex-1 px-4 py-6">
+          {/* Each page sets its own max width; the bracket uses the full width. */}
+          <Routes>
+            <Route path="/" element={<MatchesPage />} />
+            <Route path="/grupos" element={<StandingsPage />} />
+            <Route path="/chaveamento" element={<BracketPage />} />
+            <Route path="/insights" element={<InsightsPage />} />
+          </Routes>
         </main>
       </div>
     </div>

@@ -69,7 +69,7 @@ export default function InsightsPage() {
   const form = matches ? computeForm(matches) : [];
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-3xl space-y-8">
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Artilheiros</h2>
         {scorersLoading && <p className="text-slate-500">Carregando artilheiros…</p>}
