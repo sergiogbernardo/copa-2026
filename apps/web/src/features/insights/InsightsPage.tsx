@@ -76,7 +76,7 @@ export default function InsightsPage() {
   const form = matches ? computeForm(matches) : [];
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8">
+    <div className="mx-auto grid w-full max-w-6xl items-start gap-8 lg:grid-cols-2">
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Artilheiros</h2>
         {scorersLoading && <p className="text-slate-500">Carregando artilheiros…</p>}
@@ -105,7 +105,7 @@ export default function InsightsPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Forma recente</h2>
+        <h2 className="text-lg font-semibold">Sequência</h2>
         <p className="text-xs text-slate-400">
           Últimos resultados, mais recente à esquerda —{' '}
           <span className="font-semibold text-emerald-600">V</span> vitória,{' '}
