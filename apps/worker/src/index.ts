@@ -7,6 +7,7 @@ export interface Env extends CacheEnv {
 
 const SUPPORTED_SEASONS = new Set(['2026']);
 const API_PATHS = new Set(['/matches', '/standings', '/bracket', '/scorers', '/teams']);
+const HEALTH_PATH = '/health';
 
 function corsHeaders(origin: string): Record<string, string> {
   return {
@@ -24,9 +25,10 @@ function json(
     cacheStatus?: string;
     browserTtl?: number;
     edgeTtl?: number;
+    headers?: HeadersInit;
   } = {},
 ): Response {
-  const { status = 200, cacheStatus, browserTtl = 0, edgeTtl = 0 } = options;
+  const { status = 200, cacheStatus, browserTtl = 0, edgeTtl = 0, headers } = options;
   const cacheControl =
     status === 200 && edgeTtl > 0
       ? `public, max-age=${browserTtl}, s-maxage=${edgeTtl}`
@@ -39,26 +41,49 @@ function json(
       'Cache-Control': cacheControl,
       ...(cacheStatus ? { 'X-Cache': cacheStatus } : {}),
       ...corsHeaders(origin),
+      ...(headers ?? {}),
     },
   });
 }
 
-function cacheKey(request: Request): Request {
-  return new Request(request.url, { method: 'GET' });
+function cacheKey(url: URL, season: string): Request {
+  const key = new URL(url.origin);
+  key.pathname = url.pathname;
+
+  if (url.pathname === '/matches') {
+    key.searchParams.set('season', season);
+    if (url.searchParams.get('all') === 'true') key.searchParams.set('all', 'true');
+    if (url.searchParams.get('live') === 'true') key.searchParams.set('live', 'true');
+  } else {
+    key.searchParams.set('season', season);
+  }
+
+  return new Request(key.toString(), { method: 'GET' });
 }
 
-async function readEdgeCache(request: Request): Promise<Response | undefined> {
+async function readEdgeCache(url: URL, season: string): Promise<Response | undefined> {
   if (typeof caches === 'undefined') return undefined;
-  const cached = await caches.default.match(cacheKey(request));
+  const cached = await caches.default.match(cacheKey(url, season));
   if (!cached) return undefined;
   const response = new Response(cached.body, cached);
   response.headers.set('X-Cache', 'EDGE');
   return response;
 }
 
-function writeEdgeCache(request: Request, response: Response, ctx: ExecutionContext): void {
+function writeEdgeCache(url: URL, season: string, response: Response, ctx: ExecutionContext): void {
   if (typeof caches === 'undefined' || !response.ok) return;
-  ctx.waitUntil(caches.default.put(cacheKey(request), response.clone()));
+  ctx.waitUntil(caches.default.put(cacheKey(url, season), response.clone()));
+}
+
+function buildHealthPayload(snapshot: { season: string; updatedAt: number }, now = Date.now()) {
+  const ageSeconds = Math.max(0, Math.floor((now - snapshot.updatedAt) / 1000));
+  return {
+    ok: true,
+    ready: true,
+    season: snapshot.season,
+    updatedAt: snapshot.updatedAt,
+    ageSeconds,
+  };
 }
 
 export default {
@@ -72,17 +97,40 @@ export default {
       return json({ error: 'Method not allowed' }, origin, { status: 405 });
     }
 
-    const edgeHit = await readEdgeCache(request);
-    if (edgeHit) return edgeHit;
-
     const url = new URL(request.url);
     if (!API_PATHS.has(url.pathname)) {
+      if (url.pathname === HEALTH_PATH) {
+        const snapshot = await getSnapshot(env, DEFAULT_SEASON);
+        if (!snapshot) {
+          return json(
+            {
+              ok: false,
+              ready: false,
+              season: DEFAULT_SEASON,
+              updatedAt: null,
+              ageSeconds: null,
+            },
+            origin,
+            { status: 503 },
+          );
+        }
+
+        return json(buildHealthPayload(snapshot.snapshot), origin, {
+          headers: {
+            'Cache-Control': 'no-store',
+          },
+        });
+      }
+
       return json({ error: 'Not found' }, origin, { status: 404 });
     }
     const season = url.searchParams.get('season') ?? DEFAULT_SEASON;
     if (!SUPPORTED_SEASONS.has(season)) {
       return json({ error: 'Unsupported season' }, origin, { status: 400 });
     }
+
+    const edgeHit = await readEdgeCache(url, season);
+    if (edgeHit) return edgeHit;
 
     try {
       const cached = await getSnapshot(env, season);
@@ -130,7 +178,7 @@ export default {
         });
       }
 
-      writeEdgeCache(request, response, ctx);
+      writeEdgeCache(url, season, response, ctx);
       return response;
     } catch (error) {
       console.error(error);
