@@ -1,6 +1,7 @@
 import type { Match } from '../../types';
 import StatusBadge from '../../components/StatusBadge';
 import { TeamCrest } from '../../components/TeamCrest';
+import { StarIcon } from '../../components/icons';
 
 function Side({ name, logo, goals }: Match['home']) {
   return (
@@ -12,11 +13,24 @@ function Side({ name, logo, goals }: Match['home']) {
   );
 }
 
-export default function MatchCard({ match }: { match: Match }) {
+export default function MatchCard({
+  match,
+  favorite = false,
+}: {
+  match: Match;
+  favorite?: boolean;
+}) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article
+      className={`rounded-lg border bg-white p-4 shadow-sm ${
+        favorite ? 'border-amber-300 ring-1 ring-amber-200' : 'border-slate-200'
+      }`}
+    >
       <div className="mb-3 flex items-center justify-between">
-        <StatusBadge status={match.status} kickoff={match.kickoff} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={match.status} kickoff={match.kickoff} />
+          {favorite && <StarIcon filled className="h-4 w-4 text-amber-400" />}
+        </div>
         {match.venue && (
           <span className="truncate text-xs text-slate-400">
             {match.venue}

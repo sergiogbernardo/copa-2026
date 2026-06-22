@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMatches, useScorers, useTeams } from '../lib/hooks';
 import { POSITION_ORDER, positionGroup, positionLabel } from '../lib/positions';
 import type { Match } from '../types';
-import { CloseIcon } from './icons';
+import { useFavoriteTeam } from './FavoriteTeam';
+import { CloseIcon, StarIcon } from './icons';
 
 interface TeamModalValue {
   openTeam: (name: string) => void;
@@ -46,15 +47,23 @@ function MatchRow({ match }: { match: Match }) {
 }
 
 function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => void }) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { data: teams } = useTeams();
   const { data: matches } = useMatches();
   const { data: scorers } = useScorers();
+  const { favoriteTeam, setFavoriteTeam } = useFavoriteTeam();
 
   // Close on Escape.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
   }, [onClose]);
 
   const lower = teamName.toLowerCase();
@@ -70,20 +79,35 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="team-overview-title"
         className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex shrink-0 items-center gap-3 bg-pitch px-4 py-3 text-white">
           {team?.crest && <img src={team.crest} alt="" className="h-8 w-8" />}
           <div>
-            <h2 className="text-lg font-bold leading-tight">{team?.name ?? teamName}</h2>
+            <h2 id="team-overview-title" className="text-lg font-bold leading-tight">
+              {team?.name ?? teamName}
+            </h2>
             {team?.coach && <p className="text-xs text-white/80">Técnico: {team.coach}</p>}
           </div>
           <button
             type="button"
+            aria-label={favoriteTeam === teamName ? 'Remover dos favoritos' : 'Favoritar seleção'}
+            aria-pressed={favoriteTeam === teamName}
+            onClick={() => setFavoriteTeam(favoriteTeam === teamName ? '' : teamName)}
+            className="ml-auto rounded p-1 hover:bg-white/10"
+          >
+            <StarIcon filled={favoriteTeam === teamName} className="h-5 w-5" />
+          </button>
+          <button
+            ref={closeButtonRef}
+            type="button"
             aria-label="Fechar"
             onClick={onClose}
-            className="ml-auto rounded p-1 hover:bg-white/10"
+            className="rounded p-1 hover:bg-white/10"
           >
             <CloseIcon className="h-5 w-5" />
           </button>

@@ -8,7 +8,7 @@ describe('App', () => {
   it('renders the header and navigation', () => {
     render(
       <QueryClientProvider client={new QueryClient()}>
-        <MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <App />
         </MemoryRouter>
       </QueryClientProvider>,

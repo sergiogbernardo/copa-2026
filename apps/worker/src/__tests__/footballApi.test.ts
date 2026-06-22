@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildBracket, mapMatch, mapScorer, mapStandingEntry, type RawMatch } from '../footballApi';
+import {
+  buildBracket,
+  buildGroupStandings,
+  mapMatch,
+  mapScorer,
+  mapStandingEntry,
+  type RawMatch,
+} from '../footballApi';
 
 const sample: RawMatch = {
   id: 537327,
@@ -128,6 +135,44 @@ describe('buildBracket', () => {
     expect(rounds).toHaveLength(1);
     expect(rounds[0].label).toBe('Oitavas de final');
     expect(rounds[0].matches).toHaveLength(2);
+  });
+});
+
+describe('buildGroupStandings', () => {
+  it('calculates and ranks each group from finished matches', () => {
+    const match = (
+      id: number,
+      home: string,
+      away: string,
+      homeGoals: number,
+      awayGoals: number,
+    ) => ({
+      ...sample,
+      id,
+      status: 'FINISHED',
+      homeTeam: { name: home, crest: `${home}.svg` },
+      awayTeam: { name: away, crest: `${away}.svg` },
+      score: { fullTime: { home: homeGoals, away: awayGoals } },
+    });
+    const rows = buildGroupStandings([
+      match(1, 'Brazil', 'Japan', 2, 0),
+      match(2, 'Japan', 'Canada', 1, 1),
+      match(3, 'Canada', 'Brazil', 0, 0),
+    ]);
+
+    expect(
+      rows.map(({ team, rank, points, played, goalsDiff }) => ({
+        team,
+        rank,
+        points,
+        played,
+        goalsDiff,
+      })),
+    ).toEqual([
+      { team: 'Brazil', rank: 1, points: 4, played: 2, goalsDiff: 2 },
+      { team: 'Canada', rank: 2, points: 2, played: 2, goalsDiff: 0 },
+      { team: 'Japan', rank: 3, points: 1, played: 2, goalsDiff: -2 },
+    ]);
   });
 });
 

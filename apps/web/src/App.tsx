@@ -7,6 +7,7 @@ import InsightsPage from './features/insights/InsightsPage';
 import PlayersPage from './features/players/PlayersPage';
 import { LiveBadge } from './components/LiveBadge';
 import { TeamModalProvider } from './components/TeamModal';
+import { FavoriteTeamProvider } from './components/FavoriteTeam';
 import {
   BracketIcon,
   CalendarIcon,
@@ -87,9 +88,7 @@ function SearchBox() {
 }
 
 export default function App() {
-  const [collapsed, setCollapsed] = useState(
-    () => localStorage.getItem(COLLAPSE_KEY) === 'true',
-  );
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === 'true');
   const [mobileOpen, setMobileOpen] = useState(false);
   const { search } = useLocation();
 
@@ -98,67 +97,85 @@ export default function App() {
   }, [collapsed]);
 
   return (
-    <TeamModalProvider>
-    <div className="flex h-screen flex-col bg-slate-50 text-slate-900">
-      <header className="z-30 flex shrink-0 items-center gap-3 bg-pitch px-4 py-3 text-white shadow">
-        {/* Mobile: open drawer. Desktop: collapse/expand the sidebar. */}
-        <button
-          type="button"
-          aria-label="Alternar menu"
-          onClick={() => {
-            // Desktop collapses the sidebar; mobile opens the drawer.
-            if (window.matchMedia('(min-width: 768px)').matches) {
-              setCollapsed((v) => !v);
-            } else {
-              setMobileOpen((v) => !v);
-            }
-          }}
-          className="rounded p-1 hover:bg-white/10"
-        >
-          <MenuIcon className="h-6 w-6" />
-        </button>
-        <h1 className="hidden text-lg font-bold sm:block">Copa 2026 · Ao vivo</h1>
-        <div className="ml-auto flex items-center gap-3">
-          <SearchBox />
-          <LiveBadge />
-        </div>
-      </header>
+    <FavoriteTeamProvider>
+      <TeamModalProvider>
+        <div className="flex h-screen flex-col bg-slate-50 text-slate-900">
+          <header className="z-30 flex shrink-0 items-center gap-3 bg-pitch px-4 py-3 text-white shadow">
+            {/* Mobile: open drawer. Desktop: collapse/expand the sidebar. */}
+            <button
+              type="button"
+              aria-label="Alternar menu"
+              onClick={() => {
+                // Desktop collapses the sidebar; mobile opens the drawer.
+                if (window.matchMedia('(min-width: 768px)').matches) {
+                  setCollapsed((v) => !v);
+                } else {
+                  setMobileOpen((v) => !v);
+                }
+              }}
+              className="rounded p-1 hover:bg-white/10"
+            >
+              <MenuIcon className="h-6 w-6" />
+            </button>
+            <h1 className="hidden text-lg font-bold sm:block">Copa 2026 · Ao vivo</h1>
+            <div className="ml-auto flex items-center gap-3">
+              <SearchBox />
+              <LiveBadge />
+            </div>
+          </header>
 
-      <div className="flex min-h-0 flex-1">
-        {/* Desktop sidebar */}
-        <aside
-          className={`hidden shrink-0 overflow-y-auto border-r border-slate-200 bg-white md:block ${
-            collapsed ? 'w-16' : 'w-56'
-          }`}
-        >
-          <NavItems collapsed={collapsed} search={search} />
-        </aside>
-
-        {/* Mobile off-canvas drawer */}
-        {mobileOpen && (
-          <div className="fixed inset-0 z-40 md:hidden">
-            <div
-              className="absolute inset-0 bg-black/40"
-              onClick={() => setMobileOpen(false)}
-            />
-            <aside className="absolute inset-y-0 left-0 w-56 bg-white shadow-xl">
-              <NavItems collapsed={false} search={search} onNavigate={() => setMobileOpen(false)} />
+          <div className="flex min-h-0 flex-1">
+            {/* Desktop sidebar */}
+            <aside
+              className={`hidden shrink-0 overflow-y-auto border-r border-slate-200 bg-white md:block ${
+                collapsed ? 'w-16' : 'w-56'
+              }`}
+            >
+              <NavItems collapsed={collapsed} search={search} />
             </aside>
-          </div>
-        )}
 
-        <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6">
-          {/* Each page sets its own max width; the bracket uses the full width. */}
-          <Routes>
-            <Route path="/" element={<MatchesPage />} />
-            <Route path="/grupos" element={<StandingsPage />} />
-            <Route path="/chaveamento" element={<BracketPage />} />
-            <Route path="/jogadores" element={<PlayersPage />} />
-            <Route path="/insights" element={<InsightsPage />} />
-          </Routes>
-        </main>
-      </div>
-    </div>
-    </TeamModalProvider>
+            {/* Mobile off-canvas drawer */}
+            {mobileOpen && (
+              <div className="fixed inset-0 z-40 md:hidden">
+                <div
+                  className="absolute inset-0 bg-black/40"
+                  onClick={() => setMobileOpen(false)}
+                />
+                <aside className="absolute inset-y-0 left-0 w-56 bg-white shadow-xl">
+                  <NavItems
+                    collapsed={false}
+                    search={search}
+                    onNavigate={() => setMobileOpen(false)}
+                  />
+                </aside>
+              </div>
+            )}
+
+            <main className="min-w-0 flex-1 overflow-y-auto px-4 py-6">
+              {/* Each page sets its own max width; the bracket uses the full width. */}
+              <Routes>
+                <Route path="/" element={<MatchesPage />} />
+                <Route path="/grupos" element={<StandingsPage />} />
+                <Route path="/chaveamento" element={<BracketPage />} />
+                <Route path="/jogadores" element={<PlayersPage />} />
+                <Route path="/insights" element={<InsightsPage />} />
+              </Routes>
+              <footer className="mx-auto mt-10 max-w-6xl border-t border-slate-200 pt-4 text-center text-xs text-slate-400">
+                Dados fornecidos por{' '}
+                <a
+                  href="https://www.football-data.org/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-slate-600"
+                >
+                  football-data.org
+                </a>
+                ; placares do plano gratuito podem ter atraso.
+              </footer>
+            </main>
+          </div>
+        </div>
+      </TeamModalProvider>
+    </FavoriteTeamProvider>
   );
 }

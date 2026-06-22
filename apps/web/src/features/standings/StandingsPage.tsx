@@ -1,6 +1,7 @@
 import { useStandings } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
 import { TeamCrest } from '../../components/TeamCrest';
+import { TableSkeleton } from '../../components/Skeletons';
 import type { StandingRow } from '../../types';
 
 function StandingsTable({ rows }: { rows: StandingRow[] }) {
@@ -37,7 +38,7 @@ export default function StandingsPage() {
   const { data, isLoading, isError } = useStandings();
   const q = useSearchQuery();
 
-  if (isLoading) return <p className="text-slate-500">Carregando tabela…</p>;
+  if (isLoading) return <TableSkeleton count={12} />;
   if (isError) return <p className="text-red-600">Não foi possível carregar a tabela.</p>;
   if (!data || data.length === 0) return <p className="text-slate-500">Tabela indisponível.</p>;
 

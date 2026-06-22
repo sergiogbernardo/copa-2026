@@ -1,0 +1,20 @@
+{
+  "name": "Copa 2026 — Live Tracker",
+  "short_name": "Copa 2026",
+  "description": "Jogos, grupos, chaveamento, jogadores e estatísticas da Copa de 2026.",
+  "lang": "pt-BR",
+  "id": "./",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0b6e4f",
+  "icons": [
+    {
+      "src": "pwa-icon.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
