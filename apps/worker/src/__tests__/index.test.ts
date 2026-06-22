@@ -105,6 +105,21 @@ describe('Worker routes', () => {
     expect(response.status).toBe(405);
   });
 
+  it('fails closed when the allowed origin is not configured', async () => {
+    const { env, ctx } = setup();
+    env.ALLOWED_ORIGIN = '' as unknown as string;
+
+    const response = await worker.fetch(
+      new Request('https://worker.example/matches'),
+      env,
+      ctx,
+    );
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+    expect(await response.json()).toEqual({ error: 'Server misconfigured' });
+  });
+
   it('returns 503 instead of hitting upstream while the first snapshot warms', async () => {
     const { env, ctx } = setup();
     env.CACHE = { get: vi.fn(async () => null), put: vi.fn() } as unknown as KVNamespace;

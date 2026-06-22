@@ -9,7 +9,8 @@ const SUPPORTED_SEASONS = new Set(['2026']);
 const API_PATHS = new Set(['/matches', '/standings', '/bracket', '/scorers', '/teams']);
 const HEALTH_PATH = '/health';
 
-function corsHeaders(origin: string): Record<string, string> {
+function corsHeaders(origin?: string): Record<string, string> {
+  if (!origin) return {};
   return {
     'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -19,7 +20,7 @@ function corsHeaders(origin: string): Record<string, string> {
 
 function json(
   data: unknown,
-  origin: string,
+  origin?: string,
   options: {
     status?: number;
     cacheStatus?: string;
@@ -88,7 +89,12 @@ function buildHealthPayload(snapshot: { season: string; updatedAt: number }, now
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const origin = env.ALLOWED_ORIGIN || '*';
+    const origin = env.ALLOWED_ORIGIN;
+
+    if (!origin) {
+      console.error('ALLOWED_ORIGIN is not configured');
+      return json({ error: 'Server misconfigured' }, undefined, { status: 500 });
+    }
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
