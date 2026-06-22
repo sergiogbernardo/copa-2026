@@ -1,7 +1,7 @@
-import { fetchMatches } from './footballApi';
+import { DEFAULT_SEASON, fetchMatches } from './footballApi';
 
 export interface Env {
-  FOOTBALL_API_KEY: string;
+  FOOTBALL_DATA_TOKEN: string;
   ALLOWED_ORIGIN: string;
 }
 
@@ -38,7 +38,9 @@ export default {
     try {
       if (url.pathname === '/matches') {
         const live = url.searchParams.get('live') === 'true';
-        const matches = await fetchMatches(env.FOOTBALL_API_KEY, live);
+        // Focus on 2026, but allow ?season=2022/2024 for the covered editions.
+        const season = url.searchParams.get('season') ?? DEFAULT_SEASON;
+        const matches = await fetchMatches(env.FOOTBALL_DATA_TOKEN, { live, season });
         return json(matches, origin);
       }
 

@@ -1,22 +1,12 @@
-/** Thin client + mappers for the API-Football v3 endpoints we use. */
+/** Client + mappers for the football-data.org v4 API (FIFA World Cup). */
 
-const API_BASE = 'https://v3.football.api-sports.io';
+const API_BASE = 'https://api.football-data.org/v4';
+const WORLD_CUP_CODE = 'WC';
+export const DEFAULT_SEASON = '2026';
 
-// API-Football identifiers for the FIFA World Cup.
-export const WORLD_CUP_LEAGUE_ID = 1;
-// NOTE: the API-Football Free plan only covers seasons 2022-2024, so we use the
-// 2022 edition (Qatar) as a real-data demo. Switch to 2026 once on a paid plan.
-export const WORLD_CUP_SEASON = 2022;
-
-export interface Match {
-  id: number;
-  status: string;
-  kickoff: string;
-  venue: string | null;
-  city: string | null;
-  home: TeamSide;
-  away: TeamSide;
-}
+// How many recent results + upcoming fixtures the default view returns.
+const RECENT_RESULTS = 5;
+const UPCOMING = 15;
 
 export interface TeamSide {
   name: string;
@@ -24,72 +14,111 @@ export interface TeamSide {
   goals: number | null;
 }
 
-export interface StandingRow {
-  rank: number;
-  team: string;
-  logo: string;
-  points: number;
-  played: number;
-  goalsDiff: number;
-  group: string;
+export interface Match {
+  id: number;
+  /** Front-facing short status: 'LIVE' | 'HT' | 'FT' | 'NS'. */
+  status: string;
+  /** ISO 8601 kickoff timestamp. */
+  kickoff: string;
+  /** We surface stage/group here (free tier has no stadium data). */
+  venue: string | null;
+  city: string | null;
+  home: TeamSide;
+  away: TeamSide;
 }
 
-/** Shape of the fixture objects returned by API-Football (only fields we read). */
-export interface RawFixture {
-  fixture: {
-    id: number;
-    date: string;
-    status: { short: string };
-    venue: { name: string | null; city: string | null };
-  };
-  teams: {
-    home: { name: string; logo: string };
-    away: { name: string; logo: string };
-  };
-  goals: { home: number | null; away: number | null };
+/** Shape of the match objects returned by football-data.org (fields we read). */
+export interface RawMatch {
+  id: number;
+  utcDate: string;
+  status: string;
+  stage?: string;
+  group?: string | null;
+  homeTeam: { name: string | null; crest: string | null };
+  awayTeam: { name: string | null; crest: string | null };
+  score: { fullTime: { home: number | null; away: number | null } };
 }
 
-export function mapFixtureToMatch(raw: RawFixture): Match {
+const STAGE_LABELS: Record<string, string> = {
+  GROUP_STAGE: 'Fase de Grupos',
+  LAST_16: 'Oitavas de final',
+  ROUND_OF_16: 'Oitavas de final',
+  QUARTER_FINALS: 'Quartas de final',
+  SEMI_FINALS: 'Semifinal',
+  THIRD_PLACE: 'Disputa de 3º lugar',
+  FINAL: 'Final',
+};
+
+/** Map football-data status to the short codes the front-end understands. */
+function mapStatus(status: string): string {
+  switch (status) {
+    case 'IN_PLAY':
+      return 'LIVE';
+    case 'PAUSED':
+      return 'HT';
+    case 'FINISHED':
+      return 'FT';
+    default:
+      return 'NS';
+  }
+}
+
+function stageLabel(stage?: string, group?: string | null): string | null {
+  const base = stage ? (STAGE_LABELS[stage] ?? null) : null;
+  if (base && group) {
+    // "GROUP_A" -> "Grupo A"
+    const pretty = group.replace(/^GROUP_/, 'Grupo ').replace(/_/g, ' ');
+    return `${base} · ${pretty}`;
+  }
+  return base;
+}
+
+export function mapMatch(raw: RawMatch): Match {
   return {
-    id: raw.fixture.id,
-    status: raw.fixture.status.short,
-    kickoff: raw.fixture.date,
-    venue: raw.fixture.venue.name,
-    city: raw.fixture.venue.city,
-    home: { name: raw.teams.home.name, logo: raw.teams.home.logo, goals: raw.goals.home },
-    away: { name: raw.teams.away.name, logo: raw.teams.away.logo, goals: raw.goals.away },
+    id: raw.id,
+    status: mapStatus(raw.status),
+    kickoff: raw.utcDate,
+    venue: stageLabel(raw.stage, raw.group),
+    city: null,
+    home: {
+      name: raw.homeTeam.name ?? 'A definir',
+      logo: raw.homeTeam.crest ?? '',
+      goals: raw.score.fullTime.home,
+    },
+    away: {
+      name: raw.awayTeam.name ?? 'A definir',
+      logo: raw.awayTeam.crest ?? '',
+      goals: raw.score.fullTime.away,
+    },
   };
 }
 
-async function apiGet(path: string, params: Record<string, string>, apiKey: string): Promise<{
-  response: unknown[];
-}> {
-  const url = new URL(`${API_BASE}${path}`);
-  for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
-  }
-  const res = await fetch(url, { headers: { 'x-apisports-key': apiKey } });
-  if (!res.ok) {
-    throw new Error(`API-Football error: ${res.status}`);
-  }
-  return (await res.json()) as { response: unknown[] };
+interface FetchOptions {
+  live: boolean;
+  season: string;
 }
 
-// Number of trailing fixtures to show as the "knockout stage" in the demo.
-const KNOCKOUT_COUNT = 16;
+export async function fetchMatches(token: string, { live, season }: FetchOptions): Promise<Match[]> {
+  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/matches?season=${season}`;
+  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
+  if (!res.ok) {
+    throw new Error(`football-data.org error: ${res.status}`);
+  }
 
-export async function fetchMatches(apiKey: string, live: boolean): Promise<Match[]> {
-  // The Free plan blocks the `last`/`next` params, so we fetch the whole season
-  // (league + season only) and slice/sort on our side.
-  const params = live
-    ? { live: 'all' }
-    : { league: String(WORLD_CUP_LEAGUE_ID), season: String(WORLD_CUP_SEASON) };
-
-  const data = await apiGet('/fixtures', params, apiKey);
-  const matches = (data.response as RawFixture[])
-    .map(mapFixtureToMatch)
+  const body = (await res.json()) as { matches?: RawMatch[] };
+  const all = (body.matches ?? [])
+    .map(mapMatch)
     .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
 
-  // Live: return as-is. Demo (past season): show the latest matches (knockouts).
-  return live ? matches : matches.slice(-KNOCKOUT_COUNT);
+  if (live) {
+    return all.filter((m) => m.status === 'LIVE' || m.status === 'HT');
+  }
+
+  // Default view: a few recent results + the upcoming fixtures.
+  const firstPending = all.findIndex((m) => m.status !== 'FT');
+  if (firstPending === -1) {
+    return all.slice(-(RECENT_RESULTS + UPCOMING)); // tournament finished
+  }
+  const start = Math.max(0, firstPending - RECENT_RESULTS);
+  return all.slice(start, firstPending + UPCOMING);
 }
