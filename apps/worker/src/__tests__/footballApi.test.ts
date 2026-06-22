@@ -67,6 +67,22 @@ describe('mapStandingEntry', () => {
       group: 'Grupo C',
     });
   });
+
+  const entry = {
+    position: 1,
+    team: { name: 'Brazil', crest: '' },
+    playedGames: 3,
+    points: 9,
+    goalDifference: 6,
+  };
+
+  it('accepts the "Group A" spelling too', () => {
+    expect(mapStandingEntry(entry, 'Group A').group).toBe('Grupo A');
+  });
+
+  it('labels a groupless table as the overall standings', () => {
+    expect(mapStandingEntry(entry, null).group).toBe('Classificação geral');
+  });
 });
 
 describe('buildBracket', () => {

@@ -161,10 +161,15 @@ interface RawStanding {
   table: RawStandingEntry[];
 }
 
-/** "GROUP_A" -> "Grupo A"; falls back to the raw value when not a group code. */
+/**
+ * Display label for a standings block. football-data splits group competitions
+ * into per-group blocks ("GROUP_A"/"Group A"), but for the 2026 World Cup the
+ * free tier returns a single overall table with no group, so we label that case
+ * "Classificação geral".
+ */
 function groupLabel(group?: string | null): string {
-  if (!group) return 'Grupo';
-  return group.replace(/^GROUP_/, 'Grupo ').replace(/_/g, ' ');
+  if (!group) return 'Classificação geral';
+  return group.replace(/^GROUP[_ ]?/i, 'Grupo ').replace(/_/g, ' ');
 }
 
 export function mapStandingEntry(entry: RawStandingEntry, group?: string | null): StandingRow {
