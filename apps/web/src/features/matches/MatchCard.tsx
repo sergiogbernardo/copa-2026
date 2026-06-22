@@ -1,10 +1,11 @@
 import type { Match } from '../../types';
 import StatusBadge from '../../components/StatusBadge';
+import { TeamCrest } from '../../components/TeamCrest';
 
 function Side({ name, logo, goals }: Match['home']) {
   return (
     <div className="flex items-center gap-2">
-      {logo && <img src={logo} alt="" className="h-6 w-6" loading="lazy" />}
+      <TeamCrest name={name} crest={logo} className="h-6 w-6" />
       <span className="font-medium">{name}</span>
       {goals !== null && <span className="ml-auto text-lg font-bold tabular-nums">{goals}</span>}
     </div>

@@ -4,6 +4,7 @@ import {
   fetchMatches,
   fetchScorers,
   fetchStandings,
+  fetchTeams,
 } from './footballApi';
 
 export interface Env {
@@ -64,6 +65,19 @@ export default {
       if (url.pathname === '/scorers') {
         const scorers = await fetchScorers(env.FOOTBALL_DATA_TOKEN, season);
         return json(scorers, origin);
+      }
+
+      if (url.pathname === '/teams') {
+        const teams = await fetchTeams(env.FOOTBALL_DATA_TOKEN, season);
+        // Squads change rarely; let the edge cache it longer.
+        return new Response(JSON.stringify(teams), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=3600',
+            ...corsHeaders(origin),
+          },
+        });
       }
 
       return json({ error: 'Not found' }, origin, 404);
