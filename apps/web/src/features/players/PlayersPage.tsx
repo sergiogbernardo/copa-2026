@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTeams } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
 import { positionGroup, positionGroupLabel } from '../../lib/positions';
-import { useI18n } from '../../lib/i18n';
+import { teamMatchesQuery, teamName, useI18n } from '../../lib/i18n';
 import { TeamCrest } from '../../components/TeamCrest';
 import { CardGridSkeleton } from '../../components/Skeletons';
 
@@ -25,19 +25,19 @@ export default function PlayersPage() {
   if (!teams || teams.length === 0)
     return <p className="text-slate-500">{t('players.unavailable')}</p>;
 
-  const players: FlatPlayer[] = teams.flatMap((t) =>
-    t.squad.map((p) => ({
+  const players: FlatPlayer[] = teams.flatMap((team) =>
+    team.squad.map((p) => ({
       id: p.id,
       name: p.name,
       position: p.position,
-      team: t.name,
-      crest: t.crest,
+      team: team.name,
+      crest: team.crest,
     })),
   );
 
   const filtered = players
     .filter((p) => (teamFilter ? p.team === teamFilter : true))
-    .filter((p) => includesQuery(p.name, q) || includesQuery(p.team, q));
+    .filter((p) => includesQuery(p.name, q) || teamMatchesQuery(p.team, q, lang));
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4">
@@ -49,9 +49,9 @@ export default function PlayersPage() {
           className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm"
         >
           <option value="">{t('players.allTeams', { count: teams.length })}</option>
-          {teams.map((t) => (
-            <option key={t.id} value={t.name}>
-              {t.name}
+          {teams.map((team) => (
+            <option key={team.id} value={team.name}>
+              {teamName(team.name, lang)}
             </option>
           ))}
         </select>
@@ -73,7 +73,7 @@ export default function PlayersPage() {
               <div className="min-w-0">
                 <p className="truncate font-medium">{p.name}</p>
                 <p className="truncate text-xs text-slate-400">
-                  {positionGroupLabel(positionGroup(p.position), lang)} · {p.team}
+                  {positionGroupLabel(positionGroup(p.position), lang)} · {teamName(p.team, lang)}
                 </p>
               </div>
             </div>

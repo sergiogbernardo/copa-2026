@@ -253,9 +253,112 @@ export function stageLabel(stage: string, lang: Lang): string {
   return STAGE_LABELS[lang][stage] ?? stage;
 }
 
-/** Display name for a team, mapping the "A definir" sentinel to the active language. */
+/**
+ * National team names in Portuguese, keyed by the English name football-data
+ * returns. English reuses the source name as-is, so only Portuguese is mapped.
+ */
+const TEAM_NAMES_PT: Dict = {
+  // South America
+  Argentina: 'Argentina',
+  Bolivia: 'Bolívia',
+  Brazil: 'Brasil',
+  Chile: 'Chile',
+  Colombia: 'Colômbia',
+  Ecuador: 'Equador',
+  Paraguay: 'Paraguai',
+  Peru: 'Peru',
+  Uruguay: 'Uruguai',
+  Venezuela: 'Venezuela',
+  // North & Central America
+  Canada: 'Canadá',
+  'Costa Rica': 'Costa Rica',
+  Curaçao: 'Curaçao',
+  Haiti: 'Haiti',
+  Honduras: 'Honduras',
+  Jamaica: 'Jamaica',
+  Mexico: 'México',
+  Panama: 'Panamá',
+  'United States': 'Estados Unidos',
+  // Europe
+  Albania: 'Albânia',
+  Austria: 'Áustria',
+  Belgium: 'Bélgica',
+  'Bosnia-Herzegovina': 'Bósnia e Herzegovina',
+  Croatia: 'Croácia',
+  Czechia: 'Tchéquia',
+  Denmark: 'Dinamarca',
+  England: 'Inglaterra',
+  France: 'França',
+  Germany: 'Alemanha',
+  Greece: 'Grécia',
+  Hungary: 'Hungria',
+  Italy: 'Itália',
+  Netherlands: 'Países Baixos',
+  Norway: 'Noruega',
+  Poland: 'Polônia',
+  Portugal: 'Portugal',
+  'Republic of Ireland': 'Irlanda',
+  Romania: 'Romênia',
+  Russia: 'Rússia',
+  Scotland: 'Escócia',
+  Serbia: 'Sérvia',
+  Slovakia: 'Eslováquia',
+  Slovenia: 'Eslovênia',
+  Spain: 'Espanha',
+  Sweden: 'Suécia',
+  Switzerland: 'Suíça',
+  Turkey: 'Turquia',
+  Türkiye: 'Turquia',
+  Ukraine: 'Ucrânia',
+  Wales: 'País de Gales',
+  // Africa
+  Algeria: 'Argélia',
+  Angola: 'Angola',
+  Cameroon: 'Camarões',
+  'Cape Verde Islands': 'Cabo Verde',
+  'DR Congo': 'RD Congo',
+  'Congo DR': 'RD Congo',
+  Egypt: 'Egito',
+  Ghana: 'Gana',
+  'Ivory Coast': 'Costa do Marfim',
+  Mali: 'Mali',
+  Morocco: 'Marrocos',
+  Nigeria: 'Nigéria',
+  Senegal: 'Senegal',
+  'South Africa': 'África do Sul',
+  Tunisia: 'Tunísia',
+  // Asia
+  Australia: 'Austrália',
+  China: 'China',
+  'China PR': 'China',
+  Iran: 'Irã',
+  Iraq: 'Iraque',
+  Japan: 'Japão',
+  Jordan: 'Jordânia',
+  Qatar: 'Catar',
+  'Saudi Arabia': 'Arábia Saudita',
+  'South Korea': 'Coreia do Sul',
+  'United Arab Emirates': 'Emirados Árabes Unidos',
+  Uzbekistan: 'Uzbequistão',
+  // Oceania
+  'New Zealand': 'Nova Zelândia',
+};
+
+/**
+ * Display name for a team, mapping the "A definir" sentinel and (in Portuguese)
+ * the English source name to its localized form. Unknown names pass through.
+ */
 export function teamName(name: string, lang: Lang): string {
-  return name === TBD_NAME ? messages[lang]['team.tbd'] : name;
+  if (name === TBD_NAME) return messages[lang]['team.tbd'];
+  if (lang === 'pt') return TEAM_NAMES_PT[name] ?? name;
+  return name;
+}
+
+/** True when the query matches the team's source name or its localized name. */
+export function teamMatchesQuery(name: string, query: string, lang: Lang): boolean {
+  if (query === '') return true;
+  const localized = teamName(name, lang).toLowerCase();
+  return name.toLowerCase().includes(query) || localized.includes(query);
 }
 
 /**

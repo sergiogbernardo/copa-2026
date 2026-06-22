@@ -1,6 +1,6 @@
 import { useStandings } from '../../lib/hooks';
-import { includesQuery, useSearchQuery } from '../../lib/search';
-import { teamName, translateGroup, useI18n } from '../../lib/i18n';
+import { useSearchQuery } from '../../lib/search';
+import { teamMatchesQuery, teamName, translateGroup, useI18n } from '../../lib/i18n';
 import { TeamCrest } from '../../components/TeamCrest';
 import { TableSkeleton } from '../../components/Skeletons';
 import type { StandingRow } from '../../types';
@@ -46,7 +46,7 @@ export default function StandingsPage() {
   if (!data || data.length === 0)
     return <p className="text-slate-500">{t('standings.unavailable')}</p>;
 
-  const rows = data.filter((row) => includesQuery(row.team, q));
+  const rows = data.filter((row) => teamMatchesQuery(row.team, q, lang));
   if (rows.length === 0) return <p className="text-slate-500">{t('standings.noResults', { q })}</p>;
 
   const groups = [...new Set(rows.map((row) => row.group))];
