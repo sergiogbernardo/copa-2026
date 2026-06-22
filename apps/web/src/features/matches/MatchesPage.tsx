@@ -74,8 +74,10 @@ export default function MatchesPage() {
   const filtered = (matches ?? [])
     .filter((m) => matchesFilter(m, filter))
     .filter((m) => includesQuery(m.home.name, q) || includesQuery(m.away.name, q));
-  // Finished matches read better most-recent-first; everything else stays chronological.
-  const ordered = filter === 'finished' ? [...filtered].reverse() : filtered;
+  // "Todos" and "Encerrados" read better most-recent-first; "Próximos"/"Hoje"/
+  // "Ao vivo" stay chronological (nearest kickoff first).
+  const newestFirst = filter === 'all' || filter === 'finished';
+  const ordered = newestFirst ? [...filtered].reverse() : filtered;
   const days = groupByDay(ordered);
 
   return (
