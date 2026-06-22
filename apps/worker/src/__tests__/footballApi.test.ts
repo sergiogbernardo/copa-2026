@@ -109,6 +109,16 @@ describe('buildBracket', () => {
     expect(rounds[0].matches[0].id).toBe(2);
   });
 
+  it('includes the 48-team Round of 32 as the first knockout round', () => {
+    const rounds = buildBracket([
+      knockout(1, 'LAST_16', '2026-07-04T19:00:00Z'),
+      knockout(2, 'LAST_32', '2026-06-28T19:00:00Z'),
+      knockout(3, 'FINAL', '2026-07-19T19:00:00Z'),
+    ]);
+
+    expect(rounds.map((r) => r.label)).toEqual(['Rodada de 32', 'Oitavas de final', 'Final']);
+  });
+
   it('merges ROUND_OF_16 and LAST_16 aliases into a single round', () => {
     const rounds = buildBracket([
       knockout(1, 'LAST_16', '2026-07-01T19:00:00Z'),
