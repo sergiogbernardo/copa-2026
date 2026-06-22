@@ -294,3 +294,81 @@ export async function fetchScorers(token: string, season: string): Promise<Score
   const body = (await res.json()) as { scorers?: RawScorer[] };
   return (body.scorers ?? []).map(mapScorer);
 }
+
+// --- Teams & squads ----------------------------------------------------------
+
+export interface Player {
+  id: number;
+  name: string;
+  position: string | null;
+  nationality: string | null;
+  dateOfBirth: string | null;
+}
+
+export interface TeamInfo {
+  id: number;
+  name: string;
+  /** Three-letter code, e.g. "BRA". */
+  tla: string;
+  crest: string;
+  coach: string | null;
+  /** Home stadium (may be null on the free tier). */
+  venue: string | null;
+  clubColors: string | null;
+  squad: Player[];
+}
+
+interface RawPlayer {
+  id: number;
+  name: string | null;
+  position?: string | null;
+  nationality?: string | null;
+  dateOfBirth?: string | null;
+}
+
+interface RawTeam {
+  id: number;
+  name: string | null;
+  tla?: string | null;
+  crest?: string | null;
+  clubColors?: string | null;
+  venue?: string | null;
+  coach?: { name?: string | null } | null;
+  squad?: RawPlayer[];
+}
+
+export function mapPlayer(raw: RawPlayer): Player {
+  return {
+    id: raw.id,
+    name: raw.name ?? '—',
+    position: raw.position ?? null,
+    nationality: raw.nationality ?? null,
+    dateOfBirth: raw.dateOfBirth ?? null,
+  };
+}
+
+export function mapTeam(raw: RawTeam): TeamInfo {
+  return {
+    id: raw.id,
+    name: raw.name ?? '—',
+    tla: raw.tla ?? '',
+    crest: raw.crest ?? '',
+    coach: raw.coach?.name ?? null,
+    venue: raw.venue ?? null,
+    clubColors: raw.clubColors ?? null,
+    squad: (raw.squad ?? []).map(mapPlayer),
+  };
+}
+
+export async function fetchTeams(token: string, season: string): Promise<TeamInfo[]> {
+  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/teams?season=${season}`;
+  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
+  if (!res.ok) {
+    throw new Error(`football-data.org error: ${res.status}`);
+  }
+
+  const body = (await res.json()) as { teams?: RawTeam[] };
+  return (body.teams ?? [])
+    .map(mapTeam)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
