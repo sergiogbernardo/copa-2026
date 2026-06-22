@@ -41,6 +41,8 @@ export interface RawMatch {
 
 const STAGE_LABELS: Record<string, string> = {
   GROUP_STAGE: 'Fase de Grupos',
+  LAST_32: 'Rodada de 32',
+  ROUND_OF_32: 'Rodada de 32',
   LAST_16: 'Oitavas de final',
   ROUND_OF_16: 'Oitavas de final',
   QUARTER_FINALS: 'Quartas de final',
@@ -49,9 +51,12 @@ const STAGE_LABELS: Record<string, string> = {
   FINAL: 'Final',
 };
 
-// Knockout stages in bracket order. LAST_16/ROUND_OF_16 are aliases used by the
-// API across editions, so we map both to the same round.
+// Knockout stages in bracket order. The 48-team 2026 format opens with a Round
+// of 32 (LAST_32). LAST_*/ROUND_OF_* are aliases used by the API across
+// editions, so we map each pair to the same round.
 const KNOCKOUT_ORDER = [
+  'LAST_32',
+  'ROUND_OF_32',
   'LAST_16',
   'ROUND_OF_16',
   'QUARTER_FINALS',
