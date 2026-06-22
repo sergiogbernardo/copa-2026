@@ -1,0 +1,8 @@
+name = "copa-2026-api"
+main = "src/index.ts"
+compatibility_date = "2024-11-27"
+
+# Public vars (non-secret). The API key is set separately:
+#   npx wrangler secret put FOOTBALL_API_KEY
+[vars]
+ALLOWED_ORIGIN = "https://sergiogbernardo.github.io"
