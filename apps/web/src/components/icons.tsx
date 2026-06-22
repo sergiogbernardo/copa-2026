@@ -97,6 +97,17 @@ export function TrophyIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function StarIcon({
+  filled = false,
+  ...props
+}: SVGProps<SVGSVGElement> & { filled?: boolean }) {
+  return (
+    <Icon {...props} fill={filled ? 'currentColor' : 'none'}>
+      <path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2L5.8 21 7 14.2l-5-4.9 6.9-1L12 2z" />
+    </Icon>
+  );
+}
+
 export function ChartIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Icon {...props}>

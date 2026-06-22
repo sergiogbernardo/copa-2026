@@ -1,6 +1,13 @@
 name = "copa-2026-api"
 main = "src/index.ts"
-compatibility_date = "2024-11-27"
+compatibility_date = "2026-06-22"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "f148acd25aba436b8c11368e35653ee0"
+
+[triggers]
+crons = ["* * * * *"]
 
 # Public vars (non-secret). The API token is set separately:
 #   npx wrangler secret put FOOTBALL_DATA_TOKEN

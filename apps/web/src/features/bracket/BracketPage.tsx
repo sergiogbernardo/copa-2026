@@ -2,6 +2,7 @@ import { useBracket } from '../../lib/hooks';
 import type { BracketRound, Match } from '../../types';
 import { TrophyIcon } from '../../components/icons';
 import { TeamCrest } from '../../components/TeamCrest';
+import { CardGridSkeleton } from '../../components/Skeletons';
 
 const LINE = 'pointer-events-none absolute bg-slate-300';
 
@@ -98,7 +99,7 @@ function FinalColumn({ final, third }: { final: Match; third?: Match }) {
 export default function BracketPage() {
   const { data: rounds, isLoading, isError } = useBracket();
 
-  if (isLoading) return <p className="text-slate-500">Carregando chaveamento…</p>;
+  if (isLoading) return <CardGridSkeleton count={8} />;
   if (isError) return <p className="text-red-600">Não foi possível carregar o chaveamento.</p>;
   if (!rounds || rounds.length === 0)
     return <p className="text-slate-500">Mata-mata ainda não definido.</p>;

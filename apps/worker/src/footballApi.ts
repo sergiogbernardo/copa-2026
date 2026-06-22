@@ -39,6 +39,18 @@ export interface RawMatch {
   score: { fullTime: { home: number | null; away: number | null } };
 }
 
+/** Fetch the competition matches once so multiple views can share one upstream call. */
+export async function fetchRawMatches(token: string, season: string): Promise<RawMatch[]> {
+  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/matches?season=${season}`;
+  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
+  if (!res.ok) {
+    throw new Error(`football-data.org error: ${res.status}`);
+  }
+
+  const body = (await res.json()) as { matches?: RawMatch[] };
+  return body.matches ?? [];
+}
+
 const STAGE_LABELS: Record<string, string> = {
   GROUP_STAGE: 'Fase de Grupos',
   LAST_32: 'Rodada de 32',
@@ -120,17 +132,24 @@ export async function fetchMatches(
   token: string,
   { live, season, all: returnAll = false }: FetchOptions,
 ): Promise<Match[]> {
-  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/matches?season=${season}`;
-  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
-  if (!res.ok) {
-    throw new Error(`football-data.org error: ${res.status}`);
-  }
+  const matches = await fetchRawMatches(token, season);
+  return selectMatches(matches, { live, all: returnAll });
+}
 
-  const body = (await res.json()) as { matches?: RawMatch[] };
-  const all = (body.matches ?? [])
-    .map(mapMatch)
-    .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+/** Map and select raw matches without making another upstream request. */
+export function selectMatches(
+  matches: RawMatch[],
+  { live, all: returnAll = false }: Pick<FetchOptions, 'live' | 'all'>,
+): Match[] {
+  const all = matches.map(mapMatch).sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+  return selectMappedMatches(all, { live, all: returnAll });
+}
 
+/** Select a view from an already mapped, oldest-first match list. */
+export function selectMappedMatches(
+  all: Match[],
+  { live, all: returnAll = false }: Pick<FetchOptions, 'live' | 'all'>,
+): Match[] {
   if (live) {
     return all.filter((m) => m.status === 'LIVE' || m.status === 'HT');
   }
@@ -161,18 +180,16 @@ export interface StandingRow {
   group: string;
 }
 
+interface ComputedStanding extends StandingRow {
+  goalsFor: number;
+}
+
 interface RawStandingEntry {
   position: number;
   team: { name: string | null; crest: string | null };
   playedGames: number;
   points: number;
   goalDifference: number;
-}
-
-interface RawStanding {
-  type: string;
-  group?: string | null;
-  table: RawStandingEntry[];
 }
 
 /**
@@ -198,18 +215,87 @@ export function mapStandingEntry(entry: RawStandingEntry, group?: string | null)
   };
 }
 
-export async function fetchStandings(token: string, season: string): Promise<StandingRow[]> {
-  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/standings?season=${season}`;
-  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
-  if (!res.ok) {
-    throw new Error(`football-data.org error: ${res.status}`);
+/**
+ * Build real group tables from group-stage results. Available data covers the
+ * first tie-breakers (points, goal difference and goals scored); FIFA's later
+ * head-to-head/fair-play tie-breakers are intentionally not guessed.
+ */
+export function buildGroupStandings(matches: RawMatch[]): StandingRow[] {
+  const groups = new Map<string, Map<string, ComputedStanding>>();
+
+  const ensureTeam = (
+    group: string,
+    team: { name: string | null; crest: string | null },
+  ): ComputedStanding | null => {
+    if (!team.name) return null;
+    const table = groups.get(group) ?? new Map<string, ComputedStanding>();
+    groups.set(group, table);
+    const existing = table.get(team.name);
+    if (existing) return existing;
+    const row: ComputedStanding = {
+      rank: 0,
+      team: team.name,
+      logo: team.crest ?? '',
+      points: 0,
+      played: 0,
+      goalsDiff: 0,
+      goalsFor: 0,
+      group: groupLabel(group),
+    };
+    table.set(team.name, row);
+    return row;
+  };
+
+  for (const match of matches) {
+    if (match.stage !== 'GROUP_STAGE' || !match.group) continue;
+    const home = ensureTeam(match.group, match.homeTeam);
+    const away = ensureTeam(match.group, match.awayTeam);
+    if (!home || !away || match.status !== 'FINISHED') continue;
+
+    const homeGoals = match.score.fullTime.home;
+    const awayGoals = match.score.fullTime.away;
+    if (homeGoals === null || awayGoals === null) continue;
+
+    home.played += 1;
+    away.played += 1;
+    home.goalsFor += homeGoals;
+    away.goalsFor += awayGoals;
+    home.goalsDiff += homeGoals - awayGoals;
+    away.goalsDiff += awayGoals - homeGoals;
+
+    if (homeGoals > awayGoals) home.points += 3;
+    else if (awayGoals > homeGoals) away.points += 3;
+    else {
+      home.points += 1;
+      away.points += 1;
+    }
   }
 
-  const body = (await res.json()) as { standings?: RawStanding[] };
-  // Keep only the overall (TOTAL) group tables, skipping HOME/AWAY breakdowns.
-  return (body.standings ?? [])
-    .filter((s) => s.type === 'TOTAL' && Array.isArray(s.table))
-    .flatMap((s) => s.table.map((entry) => mapStandingEntry(entry, s.group)));
+  return [...groups.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .flatMap(([, table]) =>
+      [...table.values()]
+        .sort(
+          (a, b) =>
+            b.points - a.points ||
+            b.goalsDiff - a.goalsDiff ||
+            b.goalsFor - a.goalsFor ||
+            a.team.localeCompare(b.team),
+        )
+        .map((row, index) => ({
+          rank: index + 1,
+          team: row.team,
+          logo: row.logo,
+          points: row.points,
+          played: row.played,
+          goalsDiff: row.goalsDiff,
+          group: row.group,
+        })),
+    );
+}
+
+export async function fetchStandings(token: string, season: string): Promise<StandingRow[]> {
+  return buildGroupStandings(await fetchRawMatches(token, season));
 }
 
 // --- Knockout bracket --------------------------------------------------------
@@ -247,14 +333,7 @@ export function buildBracket(matches: RawMatch[]): BracketRound[] {
 }
 
 export async function fetchBracket(token: string, season: string): Promise<BracketRound[]> {
-  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/matches?season=${season}`;
-  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
-  if (!res.ok) {
-    throw new Error(`football-data.org error: ${res.status}`);
-  }
-
-  const body = (await res.json()) as { matches?: RawMatch[] };
-  return buildBracket(body.matches ?? []);
+  return buildBracket(await fetchRawMatches(token, season));
 }
 
 // --- Top scorers -------------------------------------------------------------
@@ -368,7 +447,5 @@ export async function fetchTeams(token: string, season: string): Promise<TeamInf
   }
 
   const body = (await res.json()) as { teams?: RawTeam[] };
-  return (body.teams ?? [])
-    .map(mapTeam)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  return (body.teams ?? []).map(mapTeam).sort((a, b) => a.name.localeCompare(b.name));
 }

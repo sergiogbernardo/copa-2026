@@ -3,6 +3,7 @@ import { useTeams } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
 import { positionGroup } from '../../lib/positions';
 import { TeamCrest } from '../../components/TeamCrest';
+import { CardGridSkeleton } from '../../components/Skeletons';
 
 interface FlatPlayer {
   id: number;
@@ -17,7 +18,7 @@ export default function PlayersPage() {
   const q = useSearchQuery();
   const [teamFilter, setTeamFilter] = useState('');
 
-  if (isLoading) return <p className="text-slate-500">Carregando jogadores…</p>;
+  if (isLoading) return <CardGridSkeleton count={9} />;
   if (isError) return <p className="text-red-600">Não foi possível carregar os jogadores.</p>;
   if (!teams || teams.length === 0)
     return <p className="text-slate-500">Jogadores indisponíveis.</p>;

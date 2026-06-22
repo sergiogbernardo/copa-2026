@@ -5,6 +5,7 @@
 import { useMatches, useScorers } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
 import { TeamCrest } from '../../components/TeamCrest';
+import { TableSkeleton } from '../../components/Skeletons';
 import type { Match } from '../../types';
 
 type Result = 'W' | 'D' | 'L';
@@ -85,7 +86,7 @@ export default function InsightsPage() {
     <div className="mx-auto grid w-full max-w-6xl items-start gap-8 lg:grid-cols-2">
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Artilheiros</h2>
-        {scorersLoading && <p className="text-slate-500">Carregando artilheiros…</p>}
+        {scorersLoading && <TableSkeleton count={5} />}
         {scorersError && <p className="text-red-600">Não foi possível carregar os artilheiros.</p>}
         {scorers && filteredScorers.length === 0 && (
           <p className="text-slate-500">
@@ -118,7 +119,7 @@ export default function InsightsPage() {
           <span className="font-semibold text-slate-500">E</span> empate,{' '}
           <span className="font-semibold text-red-500">D</span> derrota.
         </p>
-        {matchesLoading && <p className="text-slate-500">Carregando resultados…</p>}
+        {matchesLoading && <TableSkeleton count={5} />}
         {!matchesLoading && form.length === 0 && (
           <p className="text-slate-500">
             {q ? 'Nenhuma seleção encontrada.' : 'Sem jogos encerrados ainda.'}
