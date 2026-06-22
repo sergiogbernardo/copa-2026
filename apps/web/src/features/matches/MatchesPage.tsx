@@ -14,6 +14,10 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'finished', label: 'Encerrados' },
 ];
 
+/** A fixture with neither team decided yet (e.g. an empty knockout slot). */
+const bothUndecided = (m: Match) =>
+  m.home.name === 'A definir' && m.away.name === 'A definir';
+
 const isLive = (m: Match) => m.status === 'LIVE' || m.status === 'HT';
 const isToday = (m: Match) => {
   const now = new Date();
@@ -72,6 +76,8 @@ export default function MatchesPage() {
   const q = useSearchQuery();
 
   const filtered = (matches ?? [])
+    // Hide fixtures whose teams aren't defined yet; they appear once a team is set.
+    .filter((m) => !bothUndecided(m))
     .filter((m) => matchesFilter(m, filter))
     .filter((m) => includesQuery(m.home.name, q) || includesQuery(m.away.name, q));
   // "Todos" and "Encerrados" read better most-recent-first; "Próximos"/"Hoje"/
