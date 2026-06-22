@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import MatchesPage from './features/matches/MatchesPage';
 import StandingsPage from './features/standings/StandingsPage';
 import BracketPage from './features/bracket/BracketPage';
 import InsightsPage from './features/insights/InsightsPage';
 import { LiveBadge } from './components/LiveBadge';
-import { BracketIcon, CalendarIcon, ChartIcon, MenuIcon, TableIcon } from './components/icons';
+import {
+  BracketIcon,
+  CalendarIcon,
+  ChartIcon,
+  MenuIcon,
+  SearchIcon,
+  TableIcon,
+} from './components/icons';
 
 const navItems = [
   { to: '/', label: 'Jogos', end: true, Icon: CalendarIcon },
@@ -16,13 +23,22 @@ const navItems = [
 
 const COLLAPSE_KEY = 'copa2026:sidebar-collapsed';
 
-function NavItems({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
+function NavItems({
+  collapsed,
+  search,
+  onNavigate,
+}: {
+  collapsed: boolean;
+  search: string;
+  onNavigate?: () => void;
+}) {
   return (
     <nav className="flex flex-col gap-1 p-2">
       {navItems.map(({ to, label, end, Icon }) => (
         <NavLink
           key={to}
-          to={to}
+          // Keep the active search term when switching pages.
+          to={{ pathname: to, search }}
           end={end}
           onClick={onNavigate}
           title={collapsed ? label : undefined}
@@ -42,11 +58,36 @@ function NavItems({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
   );
 }
 
+function SearchBox() {
+  const [params, setParams] = useSearchParams();
+  const value = params.get('q') ?? '';
+
+  return (
+    <div className="relative">
+      <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/70" />
+      <input
+        type="search"
+        value={value}
+        placeholder="Buscar seleção ou jogador…"
+        aria-label="Buscar seleção ou jogador"
+        onChange={(e) => {
+          const next = new URLSearchParams(params);
+          if (e.target.value) next.set('q', e.target.value);
+          else next.delete('q');
+          setParams(next, { replace: true });
+        }}
+        className="w-40 rounded-md bg-white/15 py-1.5 pl-8 pr-2 text-sm text-white placeholder:text-white/70 focus:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40 sm:w-56 md:w-72"
+      />
+    </div>
+  );
+}
+
 export default function App() {
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem(COLLAPSE_KEY) === 'true',
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { search } = useLocation();
 
   useEffect(() => {
     localStorage.setItem(COLLAPSE_KEY, String(collapsed));
@@ -67,8 +108,9 @@ export default function App() {
         >
           <MenuIcon className="h-6 w-6" />
         </button>
-        <h1 className="text-lg font-bold">Copa 2026 · Ao vivo</h1>
-        <div className="ml-auto">
+        <h1 className="hidden text-lg font-bold sm:block">Copa 2026 · Ao vivo</h1>
+        <div className="ml-auto flex items-center gap-3">
+          <SearchBox />
           <LiveBadge />
         </div>
       </header>
@@ -80,7 +122,7 @@ export default function App() {
             collapsed ? 'w-16' : 'w-56'
           }`}
         >
-          <NavItems collapsed={collapsed} />
+          <NavItems collapsed={collapsed} search={search} />
         </aside>
 
         {/* Mobile off-canvas drawer */}
@@ -91,7 +133,7 @@ export default function App() {
               onClick={() => setMobileOpen(false)}
             />
             <aside className="absolute inset-y-0 left-0 w-56 bg-white shadow-xl">
-              <NavItems collapsed={false} onNavigate={() => setMobileOpen(false)} />
+              <NavItems collapsed={false} search={search} onNavigate={() => setMobileOpen(false)} />
             </aside>
           </div>
         )}
