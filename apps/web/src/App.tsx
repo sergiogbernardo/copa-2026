@@ -161,7 +161,15 @@ export default function App() {
                 <Route path="/insights" element={<InsightsPage />} />
               </Routes>
               <footer className="mx-auto mt-10 max-w-6xl border-t border-slate-200 pt-4 text-center text-xs text-slate-400">
-                © 2026 Sergio Bernardo
+                © 2026 Sergio Bernardo · Dados:{' '}
+                <a
+                  href="https://www.football-data.org/"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-slate-600"
+                >
+                  football-data.org
+                </a>
               </footer>
             </main>
           </div>
