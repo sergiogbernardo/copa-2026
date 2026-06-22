@@ -16,5 +16,6 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: /Copa 2026/i })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Grupos' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Chaveamento' })).toBeInTheDocument();
   });
 });

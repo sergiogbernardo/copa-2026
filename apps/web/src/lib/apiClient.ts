@@ -1,4 +1,4 @@
-import type { Match, StandingRow } from '../types';
+import type { BracketRound, Match, Scorer, StandingRow } from '../types';
 
 // Falls back to the deployed Worker URL (public, not a secret) when the build
 // variable is not set, so the production site works without extra config.
@@ -20,4 +20,12 @@ export function getMatches(live = false): Promise<Match[]> {
 
 export function getStandings(): Promise<StandingRow[]> {
   return getJson<StandingRow[]>('/standings');
+}
+
+export function getBracket(): Promise<BracketRound[]> {
+  return getJson<BracketRound[]>('/bracket');
+}
+
+export function getScorers(): Promise<Scorer[]> {
+  return getJson<Scorer[]>('/scorers');
 }

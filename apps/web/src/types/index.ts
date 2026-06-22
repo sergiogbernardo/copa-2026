@@ -8,7 +8,7 @@ export interface TeamSide {
 
 export interface Match {
   id: number;
-  /** API-Football short status, e.g. "NS" (not started), "1H", "HT", "FT". */
+  /** Front-facing short status: "LIVE" | "HT" | "FT" | "NS". */
   status: string;
   /** ISO 8601 kickoff timestamp. */
   kickoff: string;
@@ -26,4 +26,20 @@ export interface StandingRow {
   played: number;
   goalsDiff: number;
   group: string;
+}
+
+export interface BracketRound {
+  /** Raw stage code, e.g. "QUARTER_FINALS". */
+  stage: string;
+  /** Display label, e.g. "Quartas de final". */
+  label: string;
+  matches: Match[];
+}
+
+export interface Scorer {
+  player: string;
+  team: string;
+  logo: string;
+  goals: number;
+  assists: number | null;
 }
