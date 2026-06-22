@@ -1,6 +1,7 @@
 import { useBracket } from '../../lib/hooks';
 import type { BracketRound, Match } from '../../types';
 import { TrophyIcon } from '../../components/icons';
+import { TeamCrest } from '../../components/TeamCrest';
 
 const LINE = 'pointer-events-none absolute bg-slate-300';
 
@@ -23,11 +24,7 @@ function TeamRow({ name, logo, goals, winner }: Match['home'] & { winner: boolea
   const tbd = name === 'A definir';
   return (
     <div className={`flex items-center gap-1.5 ${winner ? 'font-semibold' : ''}`}>
-      {logo ? (
-        <img src={logo} alt="" className="h-4 w-4 shrink-0" loading="lazy" />
-      ) : (
-        <span className="h-4 w-4 shrink-0 rounded-full bg-slate-100" />
-      )}
+      <TeamCrest name={name} crest={logo} className="h-4 w-4" />
       <span className={`truncate ${tbd ? 'italic text-slate-400' : ''}`}>{name}</span>
       <span className="ml-auto tabular-nums text-slate-500">{goals ?? '–'}</span>
     </div>

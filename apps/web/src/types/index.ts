@@ -43,3 +43,22 @@ export interface Scorer {
   goals: number;
   assists: number | null;
 }
+
+export interface Player {
+  id: number;
+  name: string;
+  position: string | null;
+  nationality: string | null;
+  dateOfBirth: string | null;
+}
+
+export interface TeamInfo {
+  id: number;
+  name: string;
+  tla: string;
+  crest: string;
+  coach: string | null;
+  venue: string | null;
+  clubColors: string | null;
+  squad: Player[];
+}

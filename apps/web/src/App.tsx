@@ -4,7 +4,9 @@ import MatchesPage from './features/matches/MatchesPage';
 import StandingsPage from './features/standings/StandingsPage';
 import BracketPage from './features/bracket/BracketPage';
 import InsightsPage from './features/insights/InsightsPage';
+import PlayersPage from './features/players/PlayersPage';
 import { LiveBadge } from './components/LiveBadge';
+import { TeamModalProvider } from './components/TeamModal';
 import {
   BracketIcon,
   CalendarIcon,
@@ -12,12 +14,14 @@ import {
   MenuIcon,
   SearchIcon,
   TableIcon,
+  UsersIcon,
 } from './components/icons';
 
 const navItems = [
   { to: '/', label: 'Jogos', end: true, Icon: CalendarIcon },
   { to: '/grupos', label: 'Grupos', Icon: TableIcon },
   { to: '/chaveamento', label: 'Chaveamento', Icon: BracketIcon },
+  { to: '/jogadores', label: 'Jogadores', Icon: UsersIcon },
   { to: '/insights', label: 'Insights', Icon: ChartIcon },
 ];
 
@@ -94,6 +98,7 @@ export default function App() {
   }, [collapsed]);
 
   return (
+    <TeamModalProvider>
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 flex items-center gap-3 bg-pitch px-4 py-3 text-white shadow">
         {/* Mobile: open drawer. Desktop: collapse/expand the sidebar. */}
@@ -144,10 +149,12 @@ export default function App() {
             <Route path="/" element={<MatchesPage />} />
             <Route path="/grupos" element={<StandingsPage />} />
             <Route path="/chaveamento" element={<BracketPage />} />
+            <Route path="/jogadores" element={<PlayersPage />} />
             <Route path="/insights" element={<InsightsPage />} />
           </Routes>
         </main>
       </div>
     </div>
+    </TeamModalProvider>
   );
 }

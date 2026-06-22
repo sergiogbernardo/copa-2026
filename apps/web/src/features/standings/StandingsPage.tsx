@@ -1,5 +1,6 @@
 import { useStandings } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
+import { TeamCrest } from '../../components/TeamCrest';
 import type { StandingRow } from '../../types';
 
 function StandingsTable({ rows }: { rows: StandingRow[] }) {
@@ -19,7 +20,7 @@ function StandingsTable({ rows }: { rows: StandingRow[] }) {
           <tr key={row.team} className="border-t border-slate-100">
             <td className="py-1 text-slate-400">{row.rank}</td>
             <td className="flex items-center gap-2 py-1">
-              {row.logo && <img src={row.logo} alt="" className="h-5 w-5" loading="lazy" />}
+              <TeamCrest name={row.team} crest={row.logo} className="h-5 w-5" />
               {row.team}
             </td>
             <td className="text-center">{row.played}</td>

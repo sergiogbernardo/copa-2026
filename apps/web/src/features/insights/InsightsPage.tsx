@@ -4,6 +4,7 @@
  */
 import { useMatches, useScorers } from '../../lib/hooks';
 import { includesQuery, useSearchQuery } from '../../lib/search';
+import { TeamCrest } from '../../components/TeamCrest';
 import type { Match } from '../../types';
 
 type Result = 'W' | 'D' | 'L';
@@ -99,9 +100,7 @@ export default function InsightsPage() {
                 className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm shadow-sm"
               >
                 <span className="w-5 text-slate-400">{scorer.rank}</span>
-                {scorer.logo && (
-                  <img src={scorer.logo} alt="" className="h-5 w-5" loading="lazy" />
-                )}
+                <TeamCrest name={scorer.team} crest={scorer.logo} className="h-5 w-5" />
                 <span className="font-medium">{scorer.player}</span>
                 <span className="text-slate-400">{scorer.team}</span>
                 <span className="ml-auto font-bold tabular-nums">{scorer.goals}</span>
@@ -132,7 +131,7 @@ export default function InsightsPage() {
                 key={entry.team}
                 className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm shadow-sm"
               >
-                {entry.logo && <img src={entry.logo} alt="" className="h-5 w-5" loading="lazy" />}
+                <TeamCrest name={entry.team} crest={entry.logo} className="h-5 w-5" />
                 <span className="font-medium">{entry.team}</span>
                 <span className="ml-auto">
                   <FormDots results={entry.results} />
