@@ -13,7 +13,7 @@ export default function MatchesPage() {
           onClick={() => setLive(false)}
           className={`rounded px-3 py-1 text-sm ${!live ? 'bg-pitch text-white' : 'bg-slate-200'}`}
         >
-          Próximos
+          Jogos
         </button>
         <button
           onClick={() => setLive(true)}

@@ -4,7 +4,9 @@ const API_BASE = 'https://v3.football.api-sports.io';
 
 // API-Football identifiers for the FIFA World Cup.
 export const WORLD_CUP_LEAGUE_ID = 1;
-export const WORLD_CUP_SEASON = 2026;
+// NOTE: the API-Football Free plan only covers seasons 2022-2024, so we use the
+// 2022 edition (Qatar) as a real-data demo. Switch to 2026 once on a paid plan.
+export const WORLD_CUP_SEASON = 2022;
 
 export interface Match {
   id: number;
@@ -73,14 +75,21 @@ async function apiGet(path: string, params: Record<string, string>, apiKey: stri
   return (await res.json()) as { response: unknown[] };
 }
 
+// Number of trailing fixtures to show as the "knockout stage" in the demo.
+const KNOCKOUT_COUNT = 16;
+
 export async function fetchMatches(apiKey: string, live: boolean): Promise<Match[]> {
+  // The Free plan blocks the `last`/`next` params, so we fetch the whole season
+  // (league + season only) and slice/sort on our side.
   const params = live
     ? { live: 'all' }
-    : {
-        league: String(WORLD_CUP_LEAGUE_ID),
-        season: String(WORLD_CUP_SEASON),
-        next: '20',
-      };
+    : { league: String(WORLD_CUP_LEAGUE_ID), season: String(WORLD_CUP_SEASON) };
+
   const data = await apiGet('/fixtures', params, apiKey);
-  return (data.response as RawFixture[]).map(mapFixtureToMatch);
+  const matches = (data.response as RawFixture[])
+    .map(mapFixtureToMatch)
+    .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+
+  // Live: return as-is. Demo (past season): show the latest matches (knockouts).
+  return live ? matches : matches.slice(-KNOCKOUT_COUNT);
 }

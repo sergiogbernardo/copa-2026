@@ -1,6 +1,9 @@
 import type { Match, StandingRow } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+// Falls back to the deployed Worker URL (public, not a secret) when the build
+// variable is not set, so the production site works without extra config.
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'https://copa-2026-api.sergiogbernardo.workers.dev';
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`);
