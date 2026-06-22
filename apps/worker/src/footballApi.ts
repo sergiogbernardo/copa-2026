@@ -107,9 +107,14 @@ export function mapMatch(raw: RawMatch): Match {
 interface FetchOptions {
   live: boolean;
   season: string;
+  /** When true, return every match (the web app groups/filters client-side). */
+  all?: boolean;
 }
 
-export async function fetchMatches(token: string, { live, season }: FetchOptions): Promise<Match[]> {
+export async function fetchMatches(
+  token: string,
+  { live, season, all: returnAll = false }: FetchOptions,
+): Promise<Match[]> {
   const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/matches?season=${season}`;
   const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
   if (!res.ok) {
@@ -123,6 +128,10 @@ export async function fetchMatches(token: string, { live, season }: FetchOptions
 
   if (live) {
     return all.filter((m) => m.status === 'LIVE' || m.status === 'HT');
+  }
+
+  if (returnAll) {
+    return all;
   }
 
   // Default view: a few recent results + the upcoming fixtures.

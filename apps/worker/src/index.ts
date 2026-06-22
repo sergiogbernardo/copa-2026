@@ -46,7 +46,8 @@ export default {
     try {
       if (url.pathname === '/matches') {
         const live = url.searchParams.get('live') === 'true';
-        const matches = await fetchMatches(env.FOOTBALL_DATA_TOKEN, { live, season });
+        const all = url.searchParams.get('all') === 'true';
+        const matches = await fetchMatches(env.FOOTBALL_DATA_TOKEN, { live, season, all });
         return json(matches, origin);
       }
 
