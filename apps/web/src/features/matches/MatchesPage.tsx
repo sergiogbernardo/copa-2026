@@ -74,7 +74,9 @@ export default function MatchesPage() {
   const filtered = (matches ?? [])
     .filter((m) => matchesFilter(m, filter))
     .filter((m) => includesQuery(m.home.name, q) || includesQuery(m.away.name, q));
-  const days = groupByDay(filtered);
+  // Finished matches read better most-recent-first; everything else stays chronological.
+  const ordered = filter === 'finished' ? [...filtered].reverse() : filtered;
+  const days = groupByDay(ordered);
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-4">
