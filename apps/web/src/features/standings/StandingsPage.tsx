@@ -1,4 +1,5 @@
 import { useStandings } from '../../lib/hooks';
+import { includesQuery, useSearchQuery } from '../../lib/search';
 import type { StandingRow } from '../../types';
 
 function StandingsTable({ rows }: { rows: StandingRow[] }) {
@@ -32,16 +33,22 @@ function StandingsTable({ rows }: { rows: StandingRow[] }) {
 }
 
 export default function StandingsPage() {
-  const { data: rows, isLoading, isError } = useStandings();
+  const { data, isLoading, isError } = useStandings();
+  const q = useSearchQuery();
 
   if (isLoading) return <p className="text-slate-500">Carregando tabela…</p>;
   if (isError) return <p className="text-red-600">Não foi possível carregar a tabela.</p>;
-  if (!rows || rows.length === 0) return <p className="text-slate-500">Tabela indisponível.</p>;
+  if (!data || data.length === 0) return <p className="text-slate-500">Tabela indisponível.</p>;
+
+  const rows = data.filter((row) => includesQuery(row.team, q));
+  if (rows.length === 0)
+    return <p className="text-slate-500">Nenhuma seleção encontrada para “{q}”.</p>;
 
   const groups = [...new Set(rows.map((row) => row.group))];
 
-  // Single overall table (World Cup free tier): split it into two columns.
-  if (groups.length === 1) {
+  // Single overall table (World Cup free tier): split it into two columns when
+  // there are enough rows (a narrow search result stays as one table).
+  if (groups.length === 1 && rows.length > 12) {
     const mid = Math.ceil(rows.length / 2);
     return (
       <div className="mx-auto w-full max-w-5xl space-y-4">

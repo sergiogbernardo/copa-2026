@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMatches } from '../../lib/hooks';
+import { includesQuery, useSearchQuery } from '../../lib/search';
 import type { Match } from '../../types';
 import MatchCard from './MatchCard';
 
@@ -68,8 +69,11 @@ function groupByDay(matches: Match[]): DayGroup[] {
 export default function MatchesPage() {
   const [filter, setFilter] = useState<Filter>('all');
   const { data: matches, isLoading, isError } = useMatches();
+  const q = useSearchQuery();
 
-  const filtered = (matches ?? []).filter((m) => matchesFilter(m, filter));
+  const filtered = (matches ?? [])
+    .filter((m) => matchesFilter(m, filter))
+    .filter((m) => includesQuery(m.home.name, q) || includesQuery(m.away.name, q));
   const days = groupByDay(filtered);
 
   return (

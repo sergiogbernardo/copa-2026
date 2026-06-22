@@ -3,6 +3,7 @@
  * /scorers endpoint) and a simple recent-form view computed from finished matches.
  */
 import { useMatches, useScorers } from '../../lib/hooks';
+import { includesQuery, useSearchQuery } from '../../lib/search';
 import type { Match } from '../../types';
 
 type Result = 'W' | 'D' | 'L';
@@ -72,8 +73,12 @@ function FormDots({ results }: { results: Result[] }) {
 export default function InsightsPage() {
   const { data: scorers, isLoading: scorersLoading, isError: scorersError } = useScorers();
   const { data: matches, isLoading: matchesLoading } = useMatches();
+  const q = useSearchQuery();
 
-  const form = matches ? computeForm(matches) : [];
+  const filteredScorers = (scorers ?? [])
+    .map((s, i) => ({ ...s, rank: i + 1 }))
+    .filter((s) => includesQuery(s.player, q) || includesQuery(s.team, q));
+  const form = matches ? computeForm(matches).filter((f) => includesQuery(f.team, q)) : [];
 
   return (
     <div className="mx-auto grid w-full max-w-6xl items-start gap-8 lg:grid-cols-2">
@@ -81,17 +86,19 @@ export default function InsightsPage() {
         <h2 className="text-lg font-semibold">Artilheiros</h2>
         {scorersLoading && <p className="text-slate-500">Carregando artilheiros…</p>}
         {scorersError && <p className="text-red-600">Não foi possível carregar os artilheiros.</p>}
-        {scorers && scorers.length === 0 && (
-          <p className="text-slate-500">Sem gols registrados ainda.</p>
+        {scorers && filteredScorers.length === 0 && (
+          <p className="text-slate-500">
+            {q ? 'Nenhum artilheiro encontrado.' : 'Sem gols registrados ainda.'}
+          </p>
         )}
-        {scorers && scorers.length > 0 && (
+        {filteredScorers.length > 0 && (
           <ol className="space-y-2">
-            {scorers.map((scorer, i) => (
+            {filteredScorers.map((scorer, i) => (
               <li
                 key={`${scorer.player}-${i}`}
                 className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 text-sm shadow-sm"
               >
-                <span className="w-5 text-slate-400">{i + 1}</span>
+                <span className="w-5 text-slate-400">{scorer.rank}</span>
                 {scorer.logo && (
                   <img src={scorer.logo} alt="" className="h-5 w-5" loading="lazy" />
                 )}
@@ -114,7 +121,9 @@ export default function InsightsPage() {
         </p>
         {matchesLoading && <p className="text-slate-500">Carregando resultados…</p>}
         {!matchesLoading && form.length === 0 && (
-          <p className="text-slate-500">Sem jogos encerrados ainda.</p>
+          <p className="text-slate-500">
+            {q ? 'Nenhuma seleção encontrada.' : 'Sem jogos encerrados ainda.'}
+          </p>
         )}
         {form.length > 0 && (
           <ul className="space-y-2">
