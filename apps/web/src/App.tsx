@@ -160,18 +160,6 @@ export default function App() {
                 <Route path="/jogadores" element={<PlayersPage />} />
                 <Route path="/insights" element={<InsightsPage />} />
               </Routes>
-              <footer className="mx-auto mt-10 max-w-6xl border-t border-slate-200 pt-4 text-center text-xs text-slate-400">
-                Dados fornecidos por{' '}
-                <a
-                  href="https://www.football-data.org/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline hover:text-slate-600"
-                >
-                  football-data.org
-                </a>
-                ; placares do plano gratuito podem ter atraso.
-              </footer>
             </main>
           </div>
         </div>
