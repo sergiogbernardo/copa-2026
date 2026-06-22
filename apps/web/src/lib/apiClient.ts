@@ -13,9 +13,9 @@ async function getJson<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-/** Upcoming fixtures, or live matches when `live` is true. */
-export function getMatches(live = false): Promise<Match[]> {
-  return getJson<Match[]>(`/matches${live ? '?live=true' : ''}`);
+/** Every match of the tournament; the web app groups and filters client-side. */
+export function getMatches(): Promise<Match[]> {
+  return getJson<Match[]>('/matches?all=true');
 }
 
 export function getStandings(): Promise<StandingRow[]> {

@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { getBracket, getMatches, getScorers, getStandings } from './apiClient';
 
-/** Live matches refetch often; upcoming fixtures can be cached longer. */
-export function useMatches(live = false) {
+/** All matches; refetched often enough to keep live scores fresh. */
+export function useMatches() {
   return useQuery({
-    queryKey: ['matches', { live }],
-    queryFn: () => getMatches(live),
-    refetchInterval: live ? 20_000 : 5 * 60_000,
+    queryKey: ['matches'],
+    queryFn: getMatches,
+    refetchInterval: 30_000,
   });
 }
 
