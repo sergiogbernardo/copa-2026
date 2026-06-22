@@ -49,6 +49,17 @@ const STAGE_LABELS: Record<string, string> = {
   FINAL: 'Final',
 };
 
+// Knockout stages in bracket order. LAST_16/ROUND_OF_16 are aliases used by the
+// API across editions, so we map both to the same round.
+const KNOCKOUT_ORDER = [
+  'LAST_16',
+  'ROUND_OF_16',
+  'QUARTER_FINALS',
+  'SEMI_FINALS',
+  'THIRD_PLACE',
+  'FINAL',
+] as const;
+
 /** Map football-data status to the short codes the front-end understands. */
 function mapStatus(status: string): string {
   switch (status) {
@@ -121,4 +132,146 @@ export async function fetchMatches(token: string, { live, season }: FetchOptions
   }
   const start = Math.max(0, firstPending - RECENT_RESULTS);
   return all.slice(start, firstPending + UPCOMING);
+}
+
+// --- Standings ---------------------------------------------------------------
+
+export interface StandingRow {
+  rank: number;
+  team: string;
+  logo: string;
+  points: number;
+  played: number;
+  goalsDiff: number;
+  /** Display group, e.g. "Grupo A". */
+  group: string;
+}
+
+interface RawStandingEntry {
+  position: number;
+  team: { name: string | null; crest: string | null };
+  playedGames: number;
+  points: number;
+  goalDifference: number;
+}
+
+interface RawStanding {
+  type: string;
+  group?: string | null;
+  table: RawStandingEntry[];
+}
+
+/** "GROUP_A" -> "Grupo A"; falls back to the raw value when not a group code. */
+function groupLabel(group?: string | null): string {
+  if (!group) return 'Grupo';
+  return group.replace(/^GROUP_/, 'Grupo ').replace(/_/g, ' ');
+}
+
+export function mapStandingEntry(entry: RawStandingEntry, group?: string | null): StandingRow {
+  return {
+    rank: entry.position,
+    team: entry.team.name ?? 'A definir',
+    logo: entry.team.crest ?? '',
+    points: entry.points,
+    played: entry.playedGames,
+    goalsDiff: entry.goalDifference,
+    group: groupLabel(group),
+  };
+}
+
+export async function fetchStandings(token: string, season: string): Promise<StandingRow[]> {
+  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/standings?season=${season}`;
+  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
+  if (!res.ok) {
+    throw new Error(`football-data.org error: ${res.status}`);
+  }
+
+  const body = (await res.json()) as { standings?: RawStanding[] };
+  // Keep only the overall (TOTAL) group tables, skipping HOME/AWAY breakdowns.
+  return (body.standings ?? [])
+    .filter((s) => s.type === 'TOTAL' && Array.isArray(s.table))
+    .flatMap((s) => s.table.map((entry) => mapStandingEntry(entry, s.group)));
+}
+
+// --- Knockout bracket --------------------------------------------------------
+
+export interface BracketRound {
+  /** Raw stage code, e.g. "QUARTER_FINALS". */
+  stage: string;
+  /** Display label, e.g. "Quartas de final". */
+  label: string;
+  matches: Match[];
+}
+
+/** Group the knockout matches into ordered rounds for the bracket view. */
+export function buildBracket(matches: RawMatch[]): BracketRound[] {
+  const rounds: BracketRound[] = [];
+
+  for (const stage of KNOCKOUT_ORDER) {
+    const inStage = matches
+      .filter((m) => m.stage === stage)
+      .map(mapMatch)
+      .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+    if (inStage.length === 0) continue;
+
+    // ROUND_OF_16 is an alias of LAST_16; merge into a single round if both exist.
+    const label = STAGE_LABELS[stage] ?? stage;
+    const existing = rounds.find((r) => r.label === label);
+    if (existing) {
+      existing.matches.push(...inStage);
+    } else {
+      rounds.push({ stage, label, matches: inStage });
+    }
+  }
+
+  return rounds;
+}
+
+export async function fetchBracket(token: string, season: string): Promise<BracketRound[]> {
+  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/matches?season=${season}`;
+  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
+  if (!res.ok) {
+    throw new Error(`football-data.org error: ${res.status}`);
+  }
+
+  const body = (await res.json()) as { matches?: RawMatch[] };
+  return buildBracket(body.matches ?? []);
+}
+
+// --- Top scorers -------------------------------------------------------------
+
+export interface Scorer {
+  player: string;
+  team: string;
+  logo: string;
+  goals: number;
+  assists: number | null;
+}
+
+interface RawScorer {
+  player: { name: string | null };
+  team: { name: string | null; crest: string | null };
+  goals: number | null;
+  assists: number | null;
+}
+
+export function mapScorer(raw: RawScorer): Scorer {
+  return {
+    player: raw.player.name ?? 'A definir',
+    team: raw.team.name ?? '—',
+    logo: raw.team.crest ?? '',
+    goals: raw.goals ?? 0,
+    assists: raw.assists,
+  };
+}
+
+export async function fetchScorers(token: string, season: string): Promise<Scorer[]> {
+  const url = `${API_BASE}/competitions/${WORLD_CUP_CODE}/scorers?season=${season}&limit=10`;
+  const res = await fetch(url, { headers: { 'X-Auth-Token': token } });
+  if (!res.ok) {
+    throw new Error(`football-data.org error: ${res.status}`);
+  }
+
+  const body = (await res.json()) as { scorers?: RawScorer[] };
+  return (body.scorers ?? []).map(mapScorer);
 }
