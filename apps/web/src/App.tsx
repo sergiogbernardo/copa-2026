@@ -106,8 +106,12 @@ export default function App() {
           type="button"
           aria-label="Alternar menu"
           onClick={() => {
-            setMobileOpen((v) => !v);
-            setCollapsed((v) => !v);
+            // Desktop collapses the sidebar; mobile opens the drawer.
+            if (window.matchMedia('(min-width: 768px)').matches) {
+              setCollapsed((v) => !v);
+            } else {
+              setMobileOpen((v) => !v);
+            }
           }}
           className="rounded p-1 hover:bg-white/10"
         >

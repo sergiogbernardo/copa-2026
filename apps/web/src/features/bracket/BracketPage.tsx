@@ -6,13 +6,15 @@ import { TeamCrest } from '../../components/TeamCrest';
 const LINE = 'pointer-events-none absolute bg-slate-300';
 
 /** Compact tile for a single knockout fixture. */
-function MatchTile({ match }: { match: Match }) {
+function MatchTile({ match, className = 'w-40' }: { match: Match; className?: string }) {
   const decided = match.home.goals !== null && match.away.goals !== null;
   const homeWins = decided && match.home.goals! > match.away.goals!;
   const awayWins = decided && match.away.goals! > match.home.goals!;
 
   return (
-    <div className="w-40 rounded-md border border-slate-200 bg-white p-2 text-xs shadow-sm">
+    <div
+      className={`${className} rounded-md border border-slate-200 bg-white p-2 text-xs shadow-sm`}
+    >
       <TeamRow {...match.home} winner={homeWins} />
       <div className="my-1 border-t border-slate-100" />
       <TeamRow {...match.away} winner={awayWins} />
@@ -117,21 +119,39 @@ export default function BracketPage() {
   const rightRounds = [...main].reverse().map((r) => half(r, 'right'));
 
   return (
-    <div className="overflow-x-auto pb-4">
-      <div className="flex min-w-max items-stretch justify-center gap-8">
-        {leftRounds.map((r, i) => (
-          <Column key={`l-${r.stage}`} round={r} side="left" outermost={i === 0} />
-        ))}
-        {final && <FinalColumn final={final.matches[0]} third={third?.matches[0]} />}
-        {rightRounds.map((r, i) => (
-          <Column
-            key={`r-${r.stage}`}
-            round={r}
-            side="right"
-            outermost={i === rightRounds.length - 1}
-          />
+    <>
+      {/* Mobile/tablet: a simple vertical list of rounds (the symmetric bracket
+          is too wide for small screens). */}
+      <div className="space-y-6 lg:hidden">
+        {rounds.map((round) => (
+          <section key={`m-${round.stage}`}>
+            <h2 className="mb-2 text-sm font-semibold text-slate-500">{round.label}</h2>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {round.matches.map((m) => (
+                <MatchTile key={m.id} match={m} className="w-full" />
+              ))}
+            </div>
+          </section>
         ))}
       </div>
-    </div>
+
+      {/* Desktop: the symmetric FIFA-style bracket. */}
+      <div className="hidden overflow-x-auto pb-4 lg:block">
+        <div className="flex min-w-max items-stretch justify-center gap-8">
+          {leftRounds.map((r, i) => (
+            <Column key={`l-${r.stage}`} round={r} side="left" outermost={i === 0} />
+          ))}
+          {final && <FinalColumn final={final.matches[0]} third={third?.matches[0]} />}
+          {rightRounds.map((r, i) => (
+            <Column
+              key={`r-${r.stage}`}
+              round={r}
+              side="right"
+              outermost={i === rightRounds.length - 1}
+            />
+          ))}
+        </div>
+      </div>
+    </>
   );
 }
