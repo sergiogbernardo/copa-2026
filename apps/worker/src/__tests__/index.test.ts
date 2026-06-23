@@ -25,14 +25,16 @@ const snapshot: TournamentSnapshot = {
 
 function setup() {
   const get = vi.fn(async () => snapshot);
+  const limit = vi.fn(async () => ({ success: true }));
   const env = {
     FOOTBALL_DATA_TOKEN: 'test-token',
     ALLOWED_ORIGIN: 'https://example.com',
+    API_RATE_LIMITER: { limit },
     CACHE: { get, put: vi.fn() } as unknown as KVNamespace,
   } satisfies Env;
   const waitUntil = vi.fn();
   const ctx = { waitUntil } as unknown as ExecutionContext;
-  return { env, ctx, get, waitUntil };
+  return { env, ctx, get, limit, waitUntil };
 }
 
 afterEach(() => {
@@ -51,8 +53,40 @@ describe('Worker routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('X-Cache')).toBe('KV');
+    expect(response.headers.get('X-Content-Type-Options')).toBe('nosniff');
     expect(await response.json()).toEqual(snapshot.matches);
     expect(get).toHaveBeenCalledOnce();
+  });
+
+  it('rate limits public API routes by client address and path', async () => {
+    const { env, ctx, get, limit } = setup();
+    limit.mockResolvedValue({ success: false });
+
+    const response = await worker.fetch(
+      new Request('https://worker.example/matches', {
+        headers: { 'CF-Connecting-IP': '192.0.2.10' },
+      }),
+      env,
+      ctx,
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('60');
+    expect(await response.json()).toEqual({ error: 'Too many requests' });
+    expect(limit).toHaveBeenCalledWith({ key: '192.0.2.10:/matches' });
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the rate limiter is unavailable', async () => {
+    const { env, ctx, get, limit } = setup();
+    limit.mockRejectedValue(new Error('binding unavailable'));
+
+    const response = await worker.fetch(new Request('https://worker.example/teams'), env, ctx);
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Retry-After')).toBe('30');
+    expect(await response.json()).toEqual({ error: 'Service temporarily unavailable' });
+    expect(get).not.toHaveBeenCalled();
   });
 
   it('normalizes edge cache keys and ignores unrelated query params', async () => {

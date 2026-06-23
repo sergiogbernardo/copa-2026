@@ -75,6 +75,14 @@ first deployment, endpoints may return `503` for up to one minute while the
 Cron Trigger creates the initial snapshot. This deliberately prevents a cold
 cache stampede from exhausting the upstream rate limit.
 
+Public API routes are limited to 60 requests per minute for each client IP and
+route in a Cloudflare location. Requests over the limit receive `429` with a
+`Retry-After` header before the Worker reads Edge Cache or KV.
+
+Production web builds add a Content Security Policy that restricts network
+connections to `VITE_API_BASE_URL` (or the default deployed Worker URL). The
+development server omits this policy so Vite HMR can run locally.
+
 Group tables are calculated from group-stage results using the tie-breakers
 available in the feed: points, goal difference and goals scored. Later FIFA
 tie-breakers such as fair play are not available from the free data source.

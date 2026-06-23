@@ -3,11 +3,15 @@ import { DEFAULT_SEASON, selectMappedMatches } from './footballApi';
 
 export interface Env extends CacheEnv {
   ALLOWED_ORIGIN: string;
+  API_RATE_LIMITER: RateLimit;
 }
 
 const SUPPORTED_SEASONS = new Set(['2026']);
 const API_PATHS = new Set(['/matches', '/standings', '/bracket', '/scorers', '/teams']);
 const HEALTH_PATH = '/health';
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+} as const;
 
 function corsHeaders(origin?: string): Record<string, string> {
   if (!origin) return {};
@@ -38,8 +42,9 @@ function json(
   return new Response(JSON.stringify(data), {
     status,
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': cacheControl,
+      ...SECURITY_HEADERS,
       ...(cacheStatus ? { 'X-Cache': cacheStatus } : {}),
       ...corsHeaders(origin),
       ...(headers ?? {}),
@@ -133,6 +138,30 @@ export default {
     const season = url.searchParams.get('season') ?? DEFAULT_SEASON;
     if (!SUPPORTED_SEASONS.has(season)) {
       return json({ error: 'Unsupported season' }, origin, { status: 400 });
+    }
+
+    const clientAddress = request.headers.get('CF-Connecting-IP') ?? 'local';
+    try {
+      const { success } = await env.API_RATE_LIMITER.limit({
+        key: `${clientAddress}:${url.pathname}`,
+      });
+      if (!success) {
+        return json({ error: 'Too many requests' }, origin, {
+          status: 429,
+          headers: { 'Retry-After': '60' },
+        });
+      }
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          message: 'rate limiter unavailable',
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      return json({ error: 'Service temporarily unavailable' }, origin, {
+        status: 503,
+        headers: { 'Retry-After': '30' },
+      });
     }
 
     const edgeHit = await readEdgeCache(url, season);
