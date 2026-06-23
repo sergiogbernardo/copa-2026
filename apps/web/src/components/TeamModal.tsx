@@ -88,7 +88,7 @@ function TeamOverview({ teamName, onClose }: { teamName: string; onClose: () => 
         className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex shrink-0 items-center gap-3 bg-pitch px-4 py-3 text-white">
+        <header className="flex shrink-0 items-center gap-3 border-b border-emerald-500/20 bg-slate-900 px-4 py-3 text-white">
           {team?.crest && <img src={team.crest} alt="" className="h-8 w-8" />}
           <div>
             <h2 id="team-overview-title" className="text-lg font-bold leading-tight">

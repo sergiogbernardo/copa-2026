@@ -23,7 +23,7 @@ export function TeamCrest({ name, crest, className = 'h-6 w-6' }: Props) {
       type="button"
       onClick={() => openTeam(name)}
       title={t('crest.view', { name: teamName(name, lang) })}
-      className="shrink-0 rounded transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-pitch/50"
+      className="shrink-0 rounded transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-slate-900/40"
     >
       {crest ? (
         <img src={crest} alt={teamName(name, lang)} className={className} loading="lazy" />

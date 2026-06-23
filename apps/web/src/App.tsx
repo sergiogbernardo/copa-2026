@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Route, Routes, useLocation, useSearchParams } from 'react-router-dom';
 import MatchesPage from './features/matches/MatchesPage';
 import StandingsPage from './features/standings/StandingsPage';
@@ -55,7 +55,7 @@ function NavItems({
             className={({ isActive }) =>
               `flex items-center gap-3 rounded px-3 py-2 text-sm transition-colors ${
                 isActive
-                  ? 'bg-pitch/10 font-semibold text-pitch'
+                  ? 'bg-slate-900/10 font-semibold text-slate-900'
                   : 'text-slate-600 hover:bg-slate-100'
               } ${collapsed ? 'justify-center' : ''}`
             }
@@ -76,12 +76,11 @@ function LanguageToggle() {
     <button
       type="button"
       onClick={toggle}
-      aria-label={t('a11y.switchLang')}
-      title={t('a11y.switchLang')}
-      className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase hover:bg-white/25"
+      aria-label={`${t('a11y.switchLang')} (${lang})`}
+      title={`${t('a11y.switchLang')} (${lang})`}
+      className="flex items-center rounded-full p-1.5 text-white/90 transition hover:bg-white/10 hover:text-white"
     >
-      <GlobeIcon className="h-4 w-4" />
-      {lang}
+      <GlobeIcon className="h-5 w-5" />
     </button>
   );
 }
@@ -90,11 +89,33 @@ function SearchBox() {
   const [params, setParams] = useSearchParams();
   const { t } = useI18n();
   const value = params.get('q') ?? '';
+  // Collapse to just the magnifying glass; expand on demand (or when a query is set).
+  const [open, setOpen] = useState(value !== '');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={t('search.placeholder')}
+        title={t('search.placeholder')}
+        className="flex items-center rounded-full p-1.5 text-white/90 transition hover:bg-white/10 hover:text-white"
+      >
+        <SearchIcon className="h-5 w-5" />
+      </button>
+    );
+  }
 
   return (
     <div className="relative">
       <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/70" />
       <input
+        ref={inputRef}
         type="search"
         value={value}
         placeholder={t('search.placeholder')}
@@ -104,6 +125,9 @@ function SearchBox() {
           if (e.target.value) next.set('q', e.target.value);
           else next.delete('q');
           setParams(next, { replace: true });
+        }}
+        onBlur={() => {
+          if (!value) setOpen(false);
         }}
         className="w-40 rounded-md bg-white/15 py-1.5 pl-8 pr-2 text-sm text-white placeholder:text-white/70 focus:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40 sm:w-56 md:w-72"
       />
@@ -149,12 +173,12 @@ function AppShell() {
                 href="https://sergiogbernardo.github.io/"
                 aria-label="Hub de Projetos"
                 title="Hub de Projetos"
-                className="flex shrink-0 items-center rounded-full bg-white/15 p-1 transition hover:scale-105 hover:bg-white/25"
+                className="flex shrink-0 items-center transition hover:scale-105"
               >
                 <img
                   src={`${import.meta.env.BASE_URL}hub-icon.png`}
                   alt="Hub de Projetos"
-                  className="h-7 w-7"
+                  className="h-8 w-8"
                 />
               </a>
               <LanguageToggle />

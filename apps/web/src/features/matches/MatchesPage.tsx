@@ -120,7 +120,7 @@ export default function MatchesPage() {
               key={key}
               onClick={() => setFilter(key)}
               className={`rounded-full px-3 py-1 text-sm transition-colors ${
-                filter === key ? 'bg-pitch text-white' : 'bg-slate-200 hover:bg-slate-300'
+                filter === key ? 'bg-slate-900 text-white' : 'bg-slate-200 hover:bg-slate-300'
               }`}
             >
               {t(labelKey)}

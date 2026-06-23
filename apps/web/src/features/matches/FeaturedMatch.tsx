@@ -38,7 +38,7 @@ export default function FeaturedMatch({ matches }: { matches: Match[] }) {
   const live = isLiveMatch(match, now);
 
   return (
-    <section className="overflow-hidden rounded-xl bg-gradient-to-r from-pitch to-emerald-700 p-4 text-white shadow-sm">
+    <section className="overflow-hidden rounded-xl border border-emerald-500/20 bg-gradient-to-r from-slate-900 to-slate-800 p-4 text-white shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="text-xs font-bold uppercase tracking-wider text-white/80">
           {live ? t('featured.live') : t('featured.next')}
