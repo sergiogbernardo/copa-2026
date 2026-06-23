@@ -1,4 +1,4 @@
-const CACHE_NAME = 'copa-2026-shell-v1';
+const CACHE_NAME = 'copa-2026-shell-v2';
 const CACHE_PREFIX = 'copa-2026-';
 const SCOPE_PATH = new URL(self.registration.scope).pathname;
 const APP_SHELL = [
@@ -56,13 +56,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Stale-while-revalidate: serve the cached asset immediately for speed and
+  // offline support, but refresh it in the background. This keeps unhashed
+  // assets (favicon, icons, manifest) from getting stuck on a stale version.
   event.respondWith(
     (async () => {
-      const cached = await caches.match(request);
-      if (cached) return cached;
-      const response = await fetch(request);
-      if (response.ok) await (await caches.open(CACHE_NAME)).put(request, response.clone());
-      return response;
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request);
+      const network = fetch(request)
+        .then((response) => {
+          if (response.ok) cache.put(request, response.clone());
+          return response;
+        })
+        .catch(() => undefined);
+      return cached ?? (await network) ?? new Response('Offline', { status: 503 });
     })(),
   );
 });
