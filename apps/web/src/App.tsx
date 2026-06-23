@@ -145,6 +145,18 @@ function AppShell() {
             <h1 className="hidden text-lg font-bold sm:block">{t('header.title')}</h1>
             <div className="ml-auto flex items-center gap-3">
               <SearchBox />
+              <a
+                href="https://sergiogbernardo.github.io/"
+                aria-label="Hub de Projetos"
+                title="Hub de Projetos"
+                className="flex shrink-0 items-center rounded-full bg-white/15 p-1 transition hover:scale-105 hover:bg-white/25"
+              >
+                <img
+                  src={`${import.meta.env.BASE_URL}hub-icon.png`}
+                  alt="Hub de Projetos"
+                  className="h-7 w-7"
+                />
+              </a>
               <LanguageToggle />
               <LiveBadge />
             </div>
