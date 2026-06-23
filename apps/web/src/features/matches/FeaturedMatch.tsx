@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { TeamCrest } from '../../components/TeamCrest';
-import { isLiveMatch } from '../../lib/matchStatus';
+import { isLiveMatch, isUpcomingMatch } from '../../lib/matchStatus';
 import { teamName, useI18n } from '../../lib/i18n';
 import type { Match } from '../../types';
 
@@ -18,10 +18,7 @@ function countdown(kickoff: string, now: number): string {
 export function pickFeaturedMatch(matches: Match[], now = Date.now()): Match | null {
   const live = matches.find((match) => isLiveMatch(match, now));
   if (live) return live;
-  return (
-    matches.find((match) => match.status === 'NS' && new Date(match.kickoff).getTime() >= now) ??
-    null
-  );
+  return matches.find((match) => isUpcomingMatch(match, now)) ?? null;
 }
 
 export default function FeaturedMatch({ matches }: { matches: Match[] }) {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useMatches } from '../../lib/hooks';
-import { isLiveMatch } from '../../lib/matchStatus';
+import { isFinishedMatch, isLiveMatch, isUpcomingMatch } from '../../lib/matchStatus';
 import { useSearchQuery } from '../../lib/search';
 import { TBD_NAME, teamMatchesQuery, teamName, useI18n } from '../../lib/i18n';
 import { useFavoriteTeam } from '../../components/FavoriteTeam';
@@ -40,9 +40,9 @@ function matchesFilter(match: Match, filter: Filter): boolean {
     case 'today':
       return isToday(match);
     case 'upcoming':
-      return match.status === 'NS';
+      return isUpcomingMatch(match);
     case 'finished':
-      return match.status === 'FT';
+      return isFinishedMatch(match);
     default:
       return true;
   }
