@@ -125,7 +125,7 @@ function AppShell() {
     <FavoriteTeamProvider>
       <TeamModalProvider>
         <div className="flex h-screen flex-col bg-slate-50 text-slate-900">
-          <header className="z-30 flex shrink-0 items-center gap-3 bg-pitch px-4 py-3 text-white shadow">
+          <header className="z-30 flex shrink-0 items-center gap-3 border-b border-emerald-500/15 bg-black/90 px-4 py-3 text-white backdrop-blur-md">
             {/* Mobile: open drawer. Desktop: collapse/expand the sidebar. */}
             <button
               type="button"
