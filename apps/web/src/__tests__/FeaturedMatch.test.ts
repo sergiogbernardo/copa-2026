@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickFeaturedMatch } from '../features/matches/FeaturedMatch';
+import { pickFeaturedMatch, pickLiveMatches } from '../features/matches/FeaturedMatch';
 import type { Match } from '../types';
 
 const match = (id: number, status: string, kickoff: string): Match => ({
@@ -30,5 +30,20 @@ describe('pickFeaturedMatch', () => {
     const stale = match(1, 'LIVE', '2026-06-22T17:00:00Z');
     const next = match(2, 'NS', '2026-06-23T18:00:00Z');
     expect(pickFeaturedMatch([stale, next], Date.parse('2026-06-22T21:40:00Z'))).toBe(next);
+  });
+});
+
+describe('pickLiveMatches', () => {
+  it('returns every match in play so parallel games are all featured', () => {
+    const liveA = match(1, 'LIVE', '2026-06-22T17:00:00Z');
+    const liveB = match(2, 'NS', '2026-06-22T17:00:00Z'); // started but feed stuck on NS
+    const upcoming = match(3, 'NS', '2026-06-23T18:00:00Z');
+    const now = Date.parse('2026-06-22T17:30:00Z');
+    expect(pickLiveMatches([liveA, liveB, upcoming], now)).toEqual([liveA, liveB]);
+  });
+
+  it('returns an empty list when nothing is in play', () => {
+    const upcoming = match(1, 'NS', '2026-06-23T18:00:00Z');
+    expect(pickLiveMatches([upcoming], Date.parse('2026-06-22T18:00:00Z'))).toEqual([]);
   });
 });

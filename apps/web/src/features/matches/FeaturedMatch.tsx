@@ -15,23 +15,19 @@ function countdown(kickoff: string, now: number): string {
   return `${minutes}min`;
 }
 
+/** Every match currently in play, in kickoff order. */
+export function pickLiveMatches(matches: Match[], now = Date.now()): Match[] {
+  return matches.filter((match) => isLiveMatch(match, now));
+}
+
 export function pickFeaturedMatch(matches: Match[], now = Date.now()): Match | null {
   const live = matches.find((match) => isLiveMatch(match, now));
   if (live) return live;
   return matches.find((match) => isUpcomingMatch(match, now)) ?? null;
 }
 
-export default function FeaturedMatch({ matches }: { matches: Match[] }) {
-  const [now, setNow] = useState(Date.now());
+function FeaturedCard({ match, now }: { match: Match; now: number }) {
   const { t, lang } = useI18n();
-  const match = pickFeaturedMatch(matches, now);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  if (!match) return null;
   const live = isLiveMatch(match, now);
 
   return (
@@ -60,5 +56,32 @@ export default function FeaturedMatch({ matches }: { matches: Match[] }) {
         </div>
       </div>
     </section>
+  );
+}
+
+export default function FeaturedMatch({ matches }: { matches: Match[] }) {
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  // When games run in parallel (common in the final group round) feature them
+  // all; otherwise fall back to the single next scheduled match.
+  const live = pickLiveMatches(matches, now);
+  const featured = live.length > 0 ? live : [pickFeaturedMatch(matches, now)].filter(Boolean);
+  if (featured.length === 0) return null;
+
+  if (featured.length === 1) {
+    return <FeaturedCard match={featured[0] as Match} now={now} />;
+  }
+
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {featured.map((match) => (
+        <FeaturedCard key={(match as Match).id} match={match as Match} now={now} />
+      ))}
+    </div>
   );
 }
