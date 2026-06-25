@@ -29,7 +29,22 @@ export interface TournamentSnapshot {
   updatedAt: number;
 }
 
-const memoryCache = new Map<string, TournamentSnapshot>();
+/**
+ * How long a snapshot may be served from the in-isolate memory cache before we
+ * re-read the KV store. Traffic-serving isolates never refresh the snapshot
+ * themselves (only the cron does), so without an expiry they would freeze on the
+ * first value they ever read and keep serving it — which makes scores appear to
+ * "go back in time" as requests bounce between isolates frozen at different
+ * moments. Aligning the expiry with the KV `cacheTtl` keeps reads consistent.
+ */
+const MEMORY_TTL_MS = 30_000;
+
+interface MemoryEntry {
+  snapshot: TournamentSnapshot;
+  storedAt: number;
+}
+
+const memoryCache = new Map<string, MemoryEntry>();
 const refreshes = new Map<string, Promise<TournamentSnapshot>>();
 
 function snapshotKey(season: string): string {
@@ -58,24 +73,27 @@ export function snapshotsHaveSameData(
 export async function readSnapshot(
   env: CacheEnv,
   season: string,
+  now = Date.now(),
 ): Promise<TournamentSnapshot | null> {
-  const inMemory = memoryCache.get(snapshotKey(season));
-  if (inMemory) return inMemory;
+  const key = snapshotKey(season);
+  const inMemory = memoryCache.get(key);
+  if (inMemory && now - inMemory.storedAt < MEMORY_TTL_MS) return inMemory.snapshot;
 
-  const stored = await env.CACHE.get<TournamentSnapshot>(snapshotKey(season), {
+  const stored = await env.CACHE.get<TournamentSnapshot>(key, {
     type: 'json',
     cacheTtl: 30,
   });
-  if (stored) memoryCache.set(snapshotKey(season), stored);
+  if (stored) memoryCache.set(key, { snapshot: stored, storedAt: now });
   return stored;
 }
 
 async function writeSnapshot(
   env: CacheEnv,
   snapshot: TournamentSnapshot,
+  now = Date.now(),
 ): Promise<TournamentSnapshot> {
   await env.CACHE.put(snapshotKey(snapshot.season), JSON.stringify(snapshot));
-  memoryCache.set(snapshotKey(snapshot.season), snapshot);
+  memoryCache.set(snapshotKey(snapshot.season), { snapshot, storedAt: now });
   return snapshot;
 }
 
@@ -107,7 +125,7 @@ export async function refreshSnapshot(
   if (running) return running;
 
   const refresh = (async () => {
-    const current = await readSnapshot(env, season);
+    const current = await readSnapshot(env, season, now);
     const minute = new Date(now).getUTCMinutes();
     const rawMatches = await fetchRawMatches(env.FOOTBALL_DATA_TOKEN, season);
 
@@ -141,7 +159,7 @@ export async function refreshSnapshot(
     };
 
     if (current && snapshotsHaveSameData(current, next)) return current;
-    return writeSnapshot(env, { ...next, updatedAt: now });
+    return writeSnapshot(env, { ...next, updatedAt: now }, now);
   })().finally(() => refreshes.delete(key));
 
   refreshes.set(key, refresh);

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { clearMemoryCacheForTests, refreshSnapshot } from '../cache';
+import { clearMemoryCacheForTests, readSnapshot, refreshSnapshot } from '../cache';
 import type { RawMatch } from '../footballApi';
 
 const rawMatch: RawMatch = {
@@ -50,5 +50,28 @@ describe('refreshSnapshot', () => {
     expect(unchanged).toEqual(snapshot);
     expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(put).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('readSnapshot', () => {
+  it('re-reads KV once the in-memory copy expires so stale scores cannot persist', async () => {
+    const fresh = { version: 1 as const, season: '2026', matches: [], standings: [], bracket: [], scorers: [], teams: [], updatedAt: 2 }; // prettier-ignore
+    const stale = { ...fresh, updatedAt: 1 };
+    let storedValue = stale;
+    const get = vi.fn(async () => storedValue);
+    const env = { FOOTBALL_DATA_TOKEN: 'test-token', CACHE: { get } as unknown as KVNamespace };
+
+    const start = Date.UTC(2026, 5, 22, 12, 0);
+    // First read populates the memory cache from KV.
+    expect((await readSnapshot(env, '2026', start))?.updatedAt).toBe(1);
+
+    // KV now holds a newer snapshot. Within the TTL we still serve the cached copy.
+    storedValue = fresh;
+    expect((await readSnapshot(env, '2026', start + 29_000))?.updatedAt).toBe(1);
+    expect(get).toHaveBeenCalledTimes(1);
+
+    // Past the TTL we go back to KV and pick up the newer snapshot.
+    expect((await readSnapshot(env, '2026', start + 31_000))?.updatedAt).toBe(2);
+    expect(get).toHaveBeenCalledTimes(2);
   });
 });
