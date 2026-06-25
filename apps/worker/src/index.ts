@@ -184,8 +184,8 @@ export default {
         });
         response = json(matches, origin, {
           cacheStatus,
-          browserTtl: 15,
-          edgeTtl: 60,
+          browserTtl: 10,
+          edgeTtl: 30,
         });
       } else if (url.pathname === '/standings') {
         response = json(snapshot.standings, origin, {
