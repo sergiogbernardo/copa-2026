@@ -20,4 +20,4 @@ crons = ["* * * * *"]
 # Public vars (non-secret). The API token is set separately:
 #   npx wrangler secret put FOOTBALL_DATA_TOKEN
 [vars]
-ALLOWED_ORIGIN = "https://sergiogbernardo.github.io"
+ALLOWED_ORIGIN = "https://sabion.io"

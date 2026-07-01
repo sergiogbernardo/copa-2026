@@ -5,7 +5,7 @@ A simple app to follow the 2026 World Cup in (near) real time: upcoming fixtures
 bracket and insights (top scorers and recent form).
 
 - **Web** (`apps/web`) — React + Vite + TypeScript + Tailwind. Deployed to GitHub
-  Pages at `https://sergiogbernardo.github.io/copa-2026/`.
+  Pages at `https://sabion.io/copa-2026/`.
 - **Worker** (`apps/worker`) — Cloudflare Worker that proxies the
   [football-data.org](https://www.football-data.org/) v4 API. It keeps the API
   token secret and uses Edge Cache plus a persistent KV snapshot to protect the

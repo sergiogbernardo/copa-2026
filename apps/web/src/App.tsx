@@ -170,7 +170,7 @@ function AppShell() {
             <div className="ml-auto flex items-center gap-3">
               <SearchBox />
               <a
-                href="https://sergiogbernardo.github.io/"
+                href="https://sabion.io/"
                 aria-label="Hub de Projetos"
                 title="Hub de Projetos"
                 className="flex shrink-0 items-center transition hover:scale-105"
